@@ -151,6 +151,9 @@ the kiosk has reset for the next person.
 - **Export leads CSV** — every play that left an email, with the tier, what they
   were eligible for, what they actually took, code, opt-in status, and
   timestamps.
+- **Start the event clean** — wipes every play, lead and inventory counter, so
+  setup testing doesn't eat into the prizes you brought. Needs `RESET` typed to
+  confirm, and there's no undo, so export the CSV first.
 
 ## Storage
 
@@ -174,6 +177,12 @@ vercel integration add upstash/upstash-kv --plan free --name cb911-arcade-kv
 That sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. The app accepts either
 those or the `UPSTASH_REDIS_REST_*` pair, so bringing your own Upstash works
 too.
+
+**`vercel env pull` points your laptop at production.** It writes the live
+`KV_REST_API_*` credentials into `.env.local`, so `npm run dev` then reads and
+writes the same database the booth is using — including the console's reset
+button. Strip those keys out after pulling; local runs fall back to
+`.data/entries.json`, which is what you want while developing.
 
 **Blank is not the same as unset in a hosting dashboard.** Pasting
 `.env.example` into Vercel leaves every key as an empty string, and empty

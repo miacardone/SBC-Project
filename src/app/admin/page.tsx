@@ -42,6 +42,8 @@ export default function Admin() {
   const [code, setCode] = useState("");
   const [lookup, setLookup] = useState<Lookup | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "warn" | "bad"; text: string } | null>(null);
+  const [resetText, setResetText] = useState("");
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
 
   const load = useCallback(async (withPin: string) => {
     const headers = { "x-admin-pin": withPin };
@@ -151,6 +153,23 @@ export default function Admin() {
     setNotice({ tone: "warn", text: `Reopened ${data.entry.code}.` });
     setLookup(null);
     setCode("");
+    load(pin).catch(() => {});
+  };
+
+  const resetEvent = async () => {
+    setResetMsg(null);
+    const res = await fetch("/api/admin/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({ confirm: resetText.trim().toUpperCase() }),
+    });
+    const data = (await res.json()) as { removed?: number; error?: string };
+    if (!res.ok) {
+      setResetMsg(data.error ?? "Could not clear.");
+      return;
+    }
+    setResetMsg(`Cleared ${data.removed} plays. Counters are back to zero.`);
+    setResetText("");
     load(pin).catch(() => {});
   };
 
@@ -345,6 +364,35 @@ export default function Admin() {
           </section>
         </>
       )}
+
+      {/* danger zone */}
+      <section className="mb-8 rounded-2xl border border-edge bg-panel p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
+          Start the event clean
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/50">
+          Deletes every play, lead and inventory counter. Do this once after
+          setup testing and before the doors open. <strong className="text-white/80">Export the
+          CSV first if there is anything in here you want.</strong> There is no undo.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <input
+            value={resetText}
+            onChange={(e) => setResetText(e.target.value)}
+            placeholder="Type RESET"
+            className="w-48 rounded-xl border border-edge bg-black/60 px-4 py-3 text-center uppercase tracking-[0.2em] text-white outline-none focus:border-cb-red"
+          />
+          <button
+            type="button"
+            onClick={resetEvent}
+            disabled={resetText.trim().toUpperCase() !== "RESET"}
+            className="rounded-xl border border-cb-red/60 bg-cb-red/15 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-cb-red-hot transition active:scale-95 disabled:opacity-30"
+          >
+            Clear all data
+          </button>
+          {resetMsg && <span className="text-sm text-white/60">{resetMsg}</span>}
+        </div>
+      </section>
 
       {/* leads */}
       <section>

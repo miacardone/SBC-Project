@@ -245,6 +245,36 @@ export async function getClaimed(id: string): Promise<ClaimedMarker | null> {
   }
 }
 
+/**
+ * Wipe every play. This exists because a booth always arrives at the venue with
+ * a pile of test rounds in it, and there is no other way to start the day at
+ * zero with the inventory counters agreeing with the shelf.
+ */
+export async function clearAll(): Promise<number> {
+  if (backend === "file") {
+    return queueFileWrite((db) => {
+      const removed = db.entries.length;
+      db.entries = [];
+      return removed;
+    });
+  }
+
+  const entries = await listEntries();
+  const keys = [
+    ...entries.map((e) => KEY_ENTRY(e.code)),
+    ...entries.map((e) => KEY_ID(e.id)),
+    ...entries.map((e) => KEY_CLAIMED(e.id)),
+    ...ALL_TIER_IDS.map(KEY_COUNT),
+    KEY_INDEX,
+  ];
+  // DEL takes many keys, but keep the batches modest so one request can't blow
+  // past a body limit on a big event.
+  for (let i = 0; i < keys.length; i += 100) {
+    await redis(["DEL", ...keys.slice(i, i + 100)]);
+  }
+  return entries.length;
+}
+
 /** Cheap health probe for the booth console's storage banner. */
 export async function storageHealthy(): Promise<boolean> {
   try {
