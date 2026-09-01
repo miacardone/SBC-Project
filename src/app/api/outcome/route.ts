@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { makeId, makePrizeCode } from "@/lib/code";
 import {
   CONSOLATION,
-  drawQuizTier,
+  drawSkillTier,
   drawWinningTier,
-  QUIZ_PASS_SCORE,
   SLOT_WIN_RATE,
 } from "@/lib/prizes";
-import { QUIZ_LENGTH } from "@/lib/quiz";
+import { QUIZ_LENGTH, QUIZ_PASS_SCORE } from "@/lib/quiz";
+import { CATCH_PASS, CATCH_TOTAL } from "@/lib/catch";
 import { buildGrid } from "@/lib/slots";
 import { awardedCounts, saveEntry } from "@/lib/store";
 import type { Entry, GameMode, PlayResult, PrizeTier } from "@/lib/types";
@@ -17,6 +17,14 @@ export const dynamic = "force-dynamic";
 
 type Body = { mode?: GameMode; score?: number };
 
+const MODES: GameMode[] = ["casino", "classroom", "catch"];
+
+/** Pass mark and denominator for each skill game. */
+const SKILL: Record<string, { outOf: number; pass: number }> = {
+  classroom: { outOf: QUIZ_LENGTH, pass: QUIZ_PASS_SCORE },
+  catch: { outOf: CATCH_TOTAL, pass: CATCH_PASS },
+};
+
 export async function POST(request: Request) {
   let body: Body;
   try {
@@ -25,17 +33,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
 
-  const mode: GameMode = body.mode === "classroom" ? "classroom" : "casino";
-  const awarded = await awardedCounts();
+  const mode: GameMode = MODES.includes(body.mode as GameMode)
+    ? (body.mode as GameMode)
+    : "casino";
+
+  // A storage hiccup must never cost a player their turn, so the counts fall
+  // back to empty and the round still pays out.
+  let awarded: Record<string, number> = {};
+  try {
+    awarded = await awardedCounts();
+  } catch (err) {
+    console.error("[outcome] could not read awarded counts:", err);
+  }
 
   let result: PlayResult;
   let tier: PrizeTier;
   let score: number | null = null;
+  let scoreOutOf: number | null = null;
 
-  if (mode === "classroom") {
-    score = Math.max(0, Math.min(QUIZ_LENGTH, Math.round(body.score ?? 0)));
-    result = score >= QUIZ_PASS_SCORE ? "win" : "lose";
-    tier = result === "win" ? drawQuizTier(score, QUIZ_LENGTH, awarded) : CONSOLATION;
+  const skill = SKILL[mode];
+  if (skill) {
+    scoreOutOf = skill.outOf;
+    score = Math.max(0, Math.min(skill.outOf, Math.round(body.score ?? 0)));
+    result = score >= skill.pass ? "win" : "lose";
+    tier = result === "win" ? drawSkillTier(score, skill.outOf, awarded) : CONSOLATION;
   } else {
     result = Math.random() < SLOT_WIN_RATE ? "win" : "lose";
     tier = result === "win" ? drawWinningTier(awarded) : CONSOLATION;
@@ -45,7 +66,9 @@ export async function POST(request: Request) {
   if (result === "win" && tier.id === CONSOLATION.id) result = "lose";
 
   const { grid, winningRow } =
-    mode === "casino" ? buildGrid(result, tier.isGrand) : { grid: null, winningRow: null };
+    mode === "casino"
+      ? buildGrid(result, tier.isGrand)
+      : { grid: null, winningRow: null };
 
   const entry: Entry = {
     id: makeId(),
@@ -54,22 +77,39 @@ export async function POST(request: Request) {
     mode,
     result,
     score,
+    scoreOutOf,
     tierId: tier.id,
     tierLabel: tier.label,
-    tierItem: tier.item,
+    tierOptions: tier.options,
+    chosenPrize: null,
     consent: false,
     emailSent: false,
     createdAt: new Date().toISOString(),
     redeemedAt: null,
   };
-  await saveEntry(entry);
 
-  // The code is deliberately withheld until they hit the claim screen.
+  let stored = true;
+  try {
+    await saveEntry(entry);
+  } catch (err) {
+    stored = false;
+    console.error("[outcome] FAILED TO PERSIST PLAY — check storage:", err);
+  }
+
+  // The code itself is withheld until the claim screen.
   return NextResponse.json({
     id: entry.id,
+    mode,
     result,
     grid,
     winningRow,
-    prize: { id: tier.id, label: tier.label, item: tier.item, blurb: tier.blurb, isGrand: tier.isGrand },
+    stored,
+    prize: {
+      id: tier.id,
+      label: tier.label,
+      blurb: tier.blurb,
+      options: tier.options,
+      isGrand: tier.isGrand,
+    },
   });
 }

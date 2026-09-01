@@ -13,6 +13,9 @@ export const QUIZ_LENGTH = 5;
 /** Seconds on the clock per question. */
 export const QUIZ_TIME = 15;
 
+/** Correct answers needed to win a prize. A clean sweep unlocks the jackpot. */
+export const QUIZ_PASS_SCORE = 4;
+
 export const QUESTIONS: Question[] = [
   {
     id: "q-what",

@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     return {
       id: tier.id,
       label: tier.label,
-      item: tier.item,
+      options: tier.options,
       cap: tier.cap,
       awarded: won.length,
       redeemed: won.filter((e) => e.redeemedAt).length,
@@ -31,6 +31,7 @@ export async function GET(request: Request) {
     redeemed: entries.filter((e) => e.redeemedAt).length,
     casino: entries.filter((e) => e.mode === "casino").length,
     classroom: entries.filter((e) => e.mode === "classroom").length,
+    catch: entries.filter((e) => e.mode === "catch").length,
     wins: entries.filter((e) => e.result === "win").length,
     tiers,
   });

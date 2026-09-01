@@ -4,8 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Logo } from "./Chrome";
 import { drawRound, QUIZ_LENGTH, QUIZ_TIME, type Question } from "@/lib/quiz";
 
+/** What the player did on one question — feeds the review screen. */
+export type AnswerLog = {
+  question: Question;
+  picked: number | null;
+  correct: boolean;
+};
+
 type Props = {
-  onFinish: (score: number) => void;
+  onFinish: (log: AnswerLog[]) => void;
   onQuit: () => void;
 };
 
@@ -17,6 +24,7 @@ export function Quiz({ onFinish, onQuit }: Props) {
   const [picked, setPicked] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
+  const [log, setLog] = useState<AnswerLog[]>([]);
   const [timeLeft, setTimeLeft] = useState(QUIZ_TIME);
   const [timedIndex, setTimedIndex] = useState(0);
 
@@ -34,11 +42,13 @@ export function Quiz({ onFinish, onQuit }: Props) {
   const answer = useCallback(
     (choice: number | null) => {
       if (revealed) return;
+      const right = choice === question.answer;
       setPicked(choice);
       setRevealed(true);
-      if (choice === question.answer) setScore((s) => s + 1);
+      if (right) setScore((s) => s + 1);
+      setLog((entries) => [...entries, { question, picked: choice, correct: right }]);
     },
-    [revealed, question.answer]
+    [revealed, question]
   );
 
   // Countdown. Running out is just a wrong answer — keeps the line moving.
@@ -60,7 +70,7 @@ export function Quiz({ onFinish, onQuit }: Props) {
 
   const next = () => {
     if (isLast) {
-      onFinish(score);
+      onFinish(log);
       return;
     }
     setIndex((i) => i + 1);

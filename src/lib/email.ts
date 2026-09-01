@@ -19,7 +19,7 @@ function template(entry: Entry): string {
           </td></tr>
           <tr><td style="padding:8px 32px 0;text-align:center;">
             <div style="font-size:13px;letter-spacing:2px;color:#E31E24;text-transform:uppercase;font-weight:700;">${entry.tierLabel}</div>
-            <div style="font-size:26px;color:#ffffff;font-weight:700;margin:8px 0 20px;">${entry.tierItem}</div>
+            <div style="font-size:20px;color:#c3c3cc;font-weight:600;margin:8px 0 20px;">Choose one at the booth</div>
           </td></tr>
           <tr><td style="padding:0 32px;">
             <div style="background:#08080a;border:2px dashed #E31E24;border-radius:12px;padding:20px;text-align:center;">
@@ -27,9 +27,19 @@ function template(entry: Entry): string {
               <div style="font-size:32px;font-weight:800;letter-spacing:4px;color:#ffffff;margin-top:8px;font-family:'Courier New',monospace;">${entry.code}</div>
             </div>
           </td></tr>
-          <tr><td style="padding:24px 32px 32px;text-align:center;">
+          <tr><td style="padding:24px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${entry.tierOptions
+                .map(
+                  (option) =>
+                    `<tr><td style="padding:6px 0;"><div style="border:1px solid #2a2a31;border-radius:10px;padding:12px 16px;color:#ffffff;font-size:16px;font-weight:600;text-align:center;">${option}</div></td></tr>`
+                )
+                .join("")}
+            </table>
+          </td></tr>
+          <tr><td style="padding:20px 32px 32px;text-align:center;">
             <p style="color:#c3c3cc;font-size:14px;line-height:1.6;margin:0;">
-              Show this code at ${BOOTH} to pick up your ${entry.tierItem.toLowerCase()}.
+              Show this code at ${BOOTH} and pick whichever one you want.
               One prize per person, while supplies last.
             </p>
             <p style="color:#6c6c78;font-size:12px;line-height:1.6;margin:20px 0 0;">

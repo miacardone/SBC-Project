@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SymbolDefs } from "@/components/Symbols";
 import { AttractScreen } from "@/components/kiosk/AttractScreen";
+import { CatchGame } from "@/components/kiosk/CatchGame";
 import { CodeCard } from "@/components/kiosk/CodeCard";
 import { EmailCapture } from "@/components/kiosk/EmailCapture";
 import { ModeSelect } from "@/components/kiosk/ModeSelect";
 import { PrizeReveal } from "@/components/kiosk/PrizeReveal";
-import { Quiz } from "@/components/kiosk/Quiz";
+import { Quiz, type AnswerLog } from "@/components/kiosk/Quiz";
+import { QuizResults } from "@/components/kiosk/QuizResults";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
-import { requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
+import { Backdrop, Logo } from "@/components/kiosk/Chrome";
+import { requestClaim, requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
+import { CATCH_TOTAL } from "@/lib/catch";
 import type { GameMode } from "@/lib/types";
 
 type Stage =
@@ -17,26 +21,36 @@ type Stage =
   | "choose"
   | "casino"
   | "classroom"
+  | "catch"
+  | "review"
   | "grading"
   | "reveal"
   | "email"
-  | "code";
+  | "code"
+  | "trouble";
 
 /** Abandoned session? Reset the screen for the next person in line. */
-const IDLE_MS = 75_000;
+const IDLE_MS = 90_000;
 
 export default function Kiosk() {
   const [stage, setStage] = useState<Stage>("attract");
   const [mode, setMode] = useState<GameMode>("casino");
   const [score, setScore] = useState<number | null>(null);
+  const [quizLog, setQuizLog] = useState<AnswerLog[]>([]);
   const [outcome, setOutcome] = useState<OutcomeResponse | null>(null);
   const [claim, setClaim] = useState<ClaimResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // The prize request is fired the moment a skill game ends, so it resolves
+  // while the player is still reading their results.
+  const pending = useRef<Promise<OutcomeResponse> | null>(null);
+
   const reset = useCallback(() => {
+    pending.current = null;
     setStage("attract");
     setScore(null);
+    setQuizLog([]);
     setOutcome(null);
     setClaim(null);
     setBusy(false);
@@ -62,7 +76,7 @@ export default function Kiosk() {
     };
   }, [stage, reset]);
 
-  /* ----------------------------------------------------------- transitions */
+  /* ---------------------------------------------------------- transitions */
 
   const start = useCallback(() => {
     // A booth screen should be edge to edge. Browsers only allow this from a
@@ -75,7 +89,16 @@ export default function Kiosk() {
 
   const pickMode = useCallback((picked: GameMode) => {
     setMode(picked);
-    setStage(picked === "casino" ? "casino" : "classroom");
+    setError(null);
+    setStage(picked);
+  }, []);
+
+  /** Kick off the prize request without blocking the screen. */
+  const prefetchPrize = useCallback((forMode: GameMode, forScore: number) => {
+    const request = requestOutcome(forMode, forScore);
+    request.catch(() => {}); // handled below; this just avoids an unhandled rejection
+    request.then(setOutcome, () => {});
+    pending.current = request;
   }, []);
 
   const slotsFinished = useCallback((result: OutcomeResponse) => {
@@ -83,18 +106,54 @@ export default function Kiosk() {
     setStage("reveal");
   }, []);
 
-  const quizFinished = useCallback(async (finalScore: number) => {
-    setScore(finalScore);
+  const quizFinished = useCallback(
+    (log: AnswerLog[]) => {
+      const correct = log.filter((entry) => entry.correct).length;
+      setQuizLog(log);
+      setScore(correct);
+      prefetchPrize("classroom", correct);
+      setStage("review");
+    },
+    [prefetchPrize]
+  );
+
+  const catchFinished = useCallback(
+    (caught: number) => {
+      setScore(caught);
+      prefetchPrize("catch", caught);
+      setStage("grading");
+    },
+    [prefetchPrize]
+  );
+
+  /** Move from a skill game's results to the prize reveal. */
+  const settlePrize = useCallback(() => {
+    setStage(outcome ? "reveal" : "grading");
+  }, [outcome]);
+
+  /** Re-issue a prize request that failed outright. */
+  const retryPrize = useCallback(() => {
+    prefetchPrize(mode, score ?? 0);
     setStage("grading");
-    try {
-      const result = await requestOutcome("classroom", finalScore);
-      setOutcome(result);
-      setStage("reveal");
-    } catch {
-      setError("Couldn't reach the prize desk. Grab someone at the booth.");
-      setStage("choose");
-    }
-  }, []);
+  }, [prefetchPrize, mode, score]);
+
+  // Whatever put us in grading, the answer arrives here.
+  useEffect(() => {
+    if (stage !== "grading") return;
+    let cancelled = false;
+    (pending.current ?? Promise.reject(new Error("no request")))
+      .then((result) => {
+        if (cancelled) return;
+        setOutcome(result);
+        setStage("reveal");
+      })
+      .catch(() => {
+        if (!cancelled) setStage("trouble");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stage]);
 
   const submitEmail = useCallback(
     async (email: string, consent: boolean) => {
@@ -102,20 +161,10 @@ export default function Kiosk() {
       setBusy(true);
       setError(null);
       try {
-        const res = await fetch("/api/claim", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: outcome.id, email, consent }),
-        });
-        const data = (await res.json()) as ClaimResponse & { error?: string };
-        if (!res.ok) {
-          setError(data.error ?? "Something went sideways. Try again.");
-          return;
-        }
-        setClaim(data);
+        setClaim(await requestClaim({ outcome, email, consent }));
         setStage("code");
-      } catch {
-        setError("No connection. Ask a Chargebacks911 rep for help.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went sideways. Try again.");
       } finally {
         setBusy(false);
       }
@@ -126,14 +175,9 @@ export default function Kiosk() {
   const skipEmail = useCallback(async () => {
     if (!outcome) return;
     setBusy(true);
+    setError(null);
     try {
-      const res = await fetch("/api/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: outcome.id, skipEmail: true }),
-      });
-      const data = (await res.json()) as ClaimResponse;
-      setClaim(data);
+      setClaim(await requestClaim({ outcome, skipEmail: true }));
       setStage("code");
     } catch {
       setError("No connection. Ask a Chargebacks911 rep for help.");
@@ -142,7 +186,10 @@ export default function Kiosk() {
     }
   }, [outcome]);
 
-  /* ---------------------------------------------------------------- render */
+  const scoreLine =
+    mode === "catch" && score !== null ? `Caught ${score} of ${CATCH_TOTAL}` : null;
+
+  /* -------------------------------------------------------------- render */
 
   return (
     <main className="relative h-full w-full overflow-hidden bg-void">
@@ -150,26 +197,21 @@ export default function Kiosk() {
 
       {stage === "attract" && <AttractScreen onStart={start} />}
 
-      {stage === "choose" && (
-        <>
-          <ModeSelect onPick={pickMode} onQuit={reset} />
-          {error && (
-            <p className="absolute inset-x-0 bottom-[3vmin] z-30 text-center text-[2vmin] font-semibold text-cb-red-hot">
-              {error}
-            </p>
-          )}
-        </>
-      )}
+      {stage === "choose" && <ModeSelect onPick={pickMode} onQuit={reset} />}
 
       {stage === "casino" && <SlotMachine onFinish={slotsFinished} onQuit={reset} />}
 
       {stage === "classroom" && <Quiz onFinish={quizFinished} onQuit={reset} />}
 
+      {stage === "catch" && <CatchGame onFinish={catchFinished} onQuit={reset} />}
+
+      {stage === "review" && <QuizResults log={quizLog} onContinue={settlePrize} />}
+
       {stage === "grading" && (
         <div className="flex h-full w-full flex-col items-center justify-center gap-[3vmin]">
           <div className="h-[12vmin] w-[12vmin] animate-glow rounded-full border-[1vmin] border-cb-red border-t-transparent" />
           <p className="font-[family-name:var(--font-display)] text-[4vmin] uppercase tracking-wide text-white/70">
-            Tallying your score…
+            Checking the prize shelf…
           </p>
         </div>
       )}
@@ -177,15 +219,18 @@ export default function Kiosk() {
       {stage === "reveal" && outcome && (
         <PrizeReveal
           outcome={outcome}
-          mode={mode}
-          score={score}
+          scoreLine={scoreLine}
           onContinue={() => setStage("email")}
         />
       )}
 
       {stage === "email" && outcome && (
         <EmailCapture
-          prizeItem={outcome.prize.item}
+          prizeLine={
+            outcome.result === "win"
+              ? `You've got a ${outcome.prize.label} waiting — the code is your claim ticket at the booth.`
+              : "Your prize is waiting at the booth. The code is your claim ticket."
+          }
           busy={busy}
           error={error}
           onSubmit={submitEmail}
@@ -193,8 +238,38 @@ export default function Kiosk() {
         />
       )}
 
-      {stage === "code" && claim && outcome && (
-        <CodeCard claim={claim} prizeItem={outcome.prize.item} onDone={reset} />
+      {stage === "code" && claim && <CodeCard claim={claim} onDone={reset} />}
+
+      {stage === "trouble" && (
+        <div className="relative flex h-full w-full flex-col items-center justify-center gap-[3vmin] overflow-hidden p-[5vmin] text-center">
+          <Backdrop intensity={0.4} />
+          <div className="relative z-10 flex flex-col items-center gap-[2.4vmin]">
+            <Logo className="text-[6vmin]" />
+            <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
+              Grab a <span className="text-cb-red">rep</span>
+            </h1>
+            <p className="max-w-[90vmin] text-[2.4vmin] font-medium text-white/60">
+              The prize desk isn&apos;t answering, so we can&apos;t print your code. You still
+              won — tell anyone at the Chargebacks911 booth and they&apos;ll sort you out.
+            </p>
+            <div className="mt-[1vmin] flex gap-[2vmin]">
+              <button
+                type="button"
+                onClick={retryPrize}
+                className="rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white transition active:scale-95"
+              >
+                Try again
+              </button>
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded-2xl border border-edge bg-panel px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white/60 transition active:scale-95"
+              >
+                Start over
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

@@ -3,6 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Entry } from "@/lib/types";
 
+type TierStat = {
+  id: string;
+  label: string;
+  options: string[];
+  cap: number | null;
+  awarded: number;
+  redeemed: number;
+  remaining: number | null;
+};
+
 type Stats = {
   backend: string;
   plays: number;
@@ -11,17 +21,12 @@ type Stats = {
   redeemed: number;
   casino: number;
   classroom: number;
+  catch: number;
   wins: number;
-  tiers: {
-    id: string;
-    label: string;
-    item: string;
-    cap: number | null;
-    awarded: number;
-    redeemed: number;
-    remaining: number | null;
-  }[];
+  tiers: TierStat[];
 };
+
+type Lookup = { entry: Entry; status: string };
 
 const PIN_KEY = "cb911-admin-pin";
 
@@ -33,7 +38,8 @@ export default function Admin() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [code, setCode] = useState("");
-  const [redeemMsg, setRedeemMsg] = useState<{ tone: "ok" | "warn" | "bad"; text: string } | null>(null);
+  const [lookup, setLookup] = useState<Lookup | null>(null);
+  const [notice, setNotice] = useState<{ tone: "ok" | "warn" | "bad"; text: string } | null>(null);
 
   const load = useCallback(async (withPin: string) => {
     const headers = { "x-admin-pin": withPin };
@@ -91,33 +97,57 @@ export default function Admin() {
     }
   };
 
-  const redeem = async (undo = false) => {
-    setRedeemMsg(null);
+  const post = async (body: Record<string, unknown>) => {
     const res = await fetch("/api/admin/redeem", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-pin": pin },
-      body: JSON.stringify({ code, undo }),
+      body: JSON.stringify(body),
     });
-    const data = (await res.json()) as {
-      entry?: Entry;
-      status?: string;
-      error?: string;
-    };
+    return { res, data: (await res.json()) as Partial<Lookup> & { error?: string } };
+  };
 
+  const lookUp = async (raw?: string) => {
+    const target = (raw ?? code).trim();
+    if (!target) return;
+    setNotice(null);
+    setLookup(null);
+    const { res, data } = await post({ code: target });
     if (!res.ok || !data.entry) {
-      setRedeemMsg({ tone: "bad", text: data.error ?? "Not found." });
+      setNotice({ tone: "bad", text: data.error ?? "Not found." });
       return;
     }
+    setLookup({ entry: data.entry, status: data.status ?? "ready" });
     if (data.status === "already-redeemed") {
-      setRedeemMsg({
+      setNotice({
         tone: "warn",
-        text: `${data.entry.tierItem} — ALREADY REDEEMED ${new Date(data.entry.redeemedAt as string).toLocaleTimeString()}`,
+        text: `Already redeemed${data.entry.chosenPrize ? ` — took the ${data.entry.chosenPrize}` : ""} at ${new Date(data.entry.redeemedAt as string).toLocaleTimeString()}`,
       });
-    } else if (data.status === "reopened") {
-      setRedeemMsg({ tone: "warn", text: `Reopened ${data.entry.code}.` });
-    } else {
-      setRedeemMsg({ tone: "ok", text: `Hand over: ${data.entry.tierItem}` });
     }
+  };
+
+  const handOver = async (option: string) => {
+    if (!lookup) return;
+    const { res, data } = await post({ code: lookup.entry.code, chosenPrize: option });
+    if (!res.ok || !data.entry) {
+      setNotice({ tone: "bad", text: data.error ?? "Could not save that." });
+      return;
+    }
+    setNotice({ tone: "ok", text: `Handed over: ${option}` });
+    setLookup(null);
+    setCode("");
+    load(pin).catch(() => {});
+  };
+
+  const undo = async () => {
+    const target = (lookup?.entry.code ?? code).trim();
+    if (!target) return;
+    const { res, data } = await post({ code: target, undo: true });
+    if (!res.ok || !data.entry) {
+      setNotice({ tone: "bad", text: data.error ?? "Not found." });
+      return;
+    }
+    setNotice({ tone: "warn", text: `Reopened ${data.entry.code}.` });
+    setLookup(null);
     setCode("");
     load(pin).catch(() => {});
   };
@@ -197,45 +227,66 @@ export default function Admin() {
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && redeem()}
+            onKeyDown={(e) => e.key === "Enter" && lookUp()}
             placeholder="CB-XXXX-XXXX"
             autoCapitalize="characters"
-            className="min-w-0 flex-1 rounded-xl border border-edge bg-black/60 px-4 py-4 font-[family-name:var(--font-display)] text-3xl tracking-[0.15em] text-white uppercase outline-none focus:border-cb-red"
+            className="min-w-0 flex-1 rounded-xl border border-edge bg-black/60 px-4 py-4 font-[family-name:var(--font-display)] text-3xl uppercase tracking-[0.15em] text-white outline-none focus:border-cb-red"
           />
           <button
             type="button"
-            onClick={() => redeem()}
+            onClick={() => lookUp()}
             className="rounded-xl bg-cb-red px-8 py-4 font-[family-name:var(--font-display)] text-2xl uppercase tracking-wide text-white active:scale-95"
           >
             Look up
           </button>
           <button
             type="button"
-            onClick={() => redeem(true)}
+            onClick={undo}
             className="rounded-xl border border-edge bg-panel px-5 py-4 text-sm font-semibold uppercase tracking-widest text-white/50 active:scale-95"
           >
             Undo
           </button>
         </div>
-        {redeemMsg && (
+
+        {notice && (
           <p
             className={`mt-4 rounded-xl px-4 py-3 font-[family-name:var(--font-display)] text-2xl uppercase ${
-              redeemMsg.tone === "ok"
+              notice.tone === "ok"
                 ? "bg-emerald-400/15 text-emerald-300"
-                : redeemMsg.tone === "warn"
+                : notice.tone === "warn"
                   ? "bg-amber-400/15 text-amber-300"
                   : "bg-cb-red/20 text-cb-red-hot"
             }`}
           >
-            {redeemMsg.text}
+            {notice.text}
           </p>
+        )}
+
+        {lookup && lookup.status === "ready" && (
+          <div className="mt-4 rounded-xl border border-edge bg-black/40 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
+              {lookup.entry.tierLabel} · {lookup.entry.code} — tap what they took
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {lookup.entry.tierOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handOver(option)}
+                  className="rounded-xl border-2 border-cb-red/60 bg-cb-red/10 px-6 py-4 font-[family-name:var(--font-display)] text-2xl uppercase tracking-wide text-white active:scale-95"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </section>
 
       {/* numbers */}
       {stats && (
         <>
-          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
             <Stat label="Plays" value={stats.plays} />
             <Stat label="Emails" value={stats.leads} accent />
             <Stat label="Opted in" value={stats.consented} />
@@ -243,6 +294,7 @@ export default function Admin() {
             <Stat label="Wins" value={stats.wins} />
             <Stat label="Casino" value={stats.casino} />
             <Stat label="Classroom" value={stats.classroom} />
+            <Stat label="Catch" value={stats.catch} />
           </section>
 
           <section className="mb-8">
@@ -255,8 +307,10 @@ export default function Admin() {
                   <div className="text-xs uppercase tracking-[0.25em] text-cb-red">
                     {tier.label}
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-white">{tier.item}</div>
-                  <div className="mt-3 text-3xl font-[family-name:var(--font-display)] text-white">
+                  <div className="mt-1 text-sm leading-snug text-white/70">
+                    {tier.options.join(" · ")}
+                  </div>
+                  <div className="mt-3 font-[family-name:var(--font-display)] text-3xl text-white">
                     {tier.awarded}
                     <span className="text-white/30">
                       {tier.cap === null ? " awarded" : ` / ${tier.cap}`}
@@ -287,13 +341,14 @@ export default function Admin() {
           Latest plays
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-edge">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="bg-panel text-xs uppercase tracking-widest text-white/40">
               <tr>
                 <th className="px-4 py-3">Time</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Prize</th>
+                <th className="px-4 py-3">Tier</th>
+                <th className="px-4 py-3">Took</th>
                 <th className="px-4 py-3">Game</th>
                 <th className="px-4 py-3">Opt-in</th>
                 <th className="px-4 py-3">Status</th>
@@ -305,12 +360,17 @@ export default function Admin() {
                   <td className="whitespace-nowrap px-4 py-3 text-white/45">
                     {new Date(e.createdAt).toLocaleTimeString()}
                   </td>
-                  <td className="px-4 py-3 text-white/85">{e.email || <span className="text-white/25">—</span>}</td>
+                  <td className="px-4 py-3 text-white/85">
+                    {e.email || <span className="text-white/25">—</span>}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-white">{e.code}</td>
-                  <td className="px-4 py-3 text-white/70">{e.tierItem}</td>
+                  <td className="px-4 py-3 text-white/70">{e.tierLabel}</td>
+                  <td className="px-4 py-3 text-white/70">
+                    {e.chosenPrize ?? <span className="text-white/25">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-white/45">
                     {e.mode}
-                    {e.score !== null && ` ${e.score}/5`}
+                    {e.score !== null && e.scoreOutOf !== null && ` ${e.score}/${e.scoreOutOf}`}
                   </td>
                   <td className="px-4 py-3">{e.consent ? "yes" : "—"}</td>
                   <td className="px-4 py-3">
@@ -328,7 +388,7 @@ export default function Admin() {
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-white/30">
+                  <td colSpan={8} className="px-4 py-10 text-center text-white/30">
                     Nothing yet. Go play a round.
                   </td>
                 </tr>

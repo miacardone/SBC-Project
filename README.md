@@ -1,20 +1,20 @@
 # cb911 Arcade
 
 A touchscreen booth game for Chargebacks911. Players walk up to the screen, pick
-**Casino** or **Classroom**, play a round, and every single one of them wins a
-prize. They drop in an email, get a claim code on screen and in their inbox, and
-carry the code to the booth to collect the physical prize.
+one of three games, play a round, and every single one of them wins a prize. They
+drop in an email, get a claim code on screen and in their inbox, and carry the
+code to the booth to choose their prize.
 
 The booth gets engagement and a clean, consented lead list. The player gets a
 plush bull.
 
 ```
-attract  →  pick a game  →  play  →  prize reveal  →  email  →  claim code
-   ↑                                                                  │
-   └──────────────── auto-reset for the next person ──────────────────┘
+attract  →  pick a game  →  play  →  results  →  prize reveal  →  email  →  code
+   ↑                                                                        │
+   └───────────────────── auto-reset for the next person ───────────────────┘
 ```
 
-## The two games
+## The three games
 
 **Casino** — a five-reel cb911 slot machine. Three bulls on the payline pays.
 The result is decided server-side *before* the reels animate, so prize odds and
@@ -23,10 +23,25 @@ inventory stay under your control instead of the animation's.
 **Classroom** — the Chargeback Challenge: five questions pulled at random from a
 14-question bank, 15 seconds each, with the real answer and a one-line
 explanation after every one. Four right wins a prize; a perfect five is the only
-way into the jackpot pool.
+way into the jackpot pool. At the end they get a full score card with every
+question, what they answered, and what the right answer was.
 
-Losing at either game still awards the consolation tier. Nobody walks away empty
+**Catch** — Catch the Fraud. Orders pop onto the board one detail at a time
+("AVS mismatch · CVV fail", "Verified by 3-D Secure"). Tap the fraudulent ones
+before they clear and leave the good customers alone — tapping a legit order is
+a false decline and counts against you. Catch 7 of 10 to win, all 10 for the
+jackpot. It's the loudest of the three and the one that pulls a crowd.
+
+Losing at any game still awards the consolation tier. Nobody walks away empty
 handed — that's the point.
+
+## Prizes are chosen, not assigned
+
+A player wins a *tier*, not a specific object. The code screen and the email
+both list what that tier is worth, and they pick which one they actually want
+when they hand the code over at the booth. Booth staff tap the item on the
+console and it's recorded against the code. That way one item running out early
+doesn't strand anyone holding a promise the booth can't keep.
 
 ## Run it
 
@@ -53,38 +68,53 @@ working default except email.
 | `PRIZE_EMAIL_FROM` | Sender identity on the prize email. Domain must be verified in Resend. |
 | `BOOTH_LOCATION` | Printed in the email — e.g. `"the Chargebacks911 booth (#123)"`. |
 | `SLOT_WIN_RATE` | Share of slot pulls that win a real prize. Default `0.35`. |
-| `QUIZ_PASS_SCORE` | Correct answers out of 5 needed to win. Default `4`. |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Switches storage from a local file to Redis. Required if you deploy. |
 
 ### Prizes and inventory
 
-Edit `src/lib/prizes.ts`. Each tier has a `weight` (relative odds inside the
-winning pool) and a `cap` (how many you physically brought). When a tier hits its
-cap the engine stops offering it and rolls down to the next one, so the kiosk
-never promises a gift card you've run out of.
+Edit `src/lib/prizes.ts`. Each tier has `options` (what the player may choose
+from at the booth), a `weight` (relative odds inside the winning pool), and a
+`cap` (how many of that tier you physically brought). When a tier hits its cap
+the engine stops offering it and rolls down to the next one, so the kiosk never
+promises a gift card you've run out of.
 
 ```ts
-{ id: "grand", label: "JACKPOT", item: "$25 gift card", weight: 3, cap: 15, isGrand: true }
+{
+  id: "grand",
+  label: "JACKPOT",
+  options: ["$25 gift card", "cb911 hoodie", "Premium plush bull"],
+  weight: 3,
+  cap: 15,
+  isGrand: true,
+}
 ```
 
 `CONSOLATION` in the same file is the floor everyone lands on.
 
-### Questions
+### Questions and difficulty
 
-`src/lib/quiz.ts`. Add objects to `QUESTIONS` — each needs four options, the
-index of the right one, and an `explain` line. The round pulls five at random, so
-a bigger bank means back-to-back players see different questions.
+`src/lib/quiz.ts` holds the question bank — add objects to `QUESTIONS`, each with
+four options, the index of the right one, and an `explain` line. A round pulls
+five at random, so a bigger bank means back-to-back players see different
+questions. `QUIZ_PASS_SCORE` and `QUIZ_TIME` are in the same file.
+
+`src/lib/catch.ts` holds the Catch deck. `FRAUD` and `LEGIT` are the two card
+pools, and `CARD_LIFE` / `SPAWN_EVERY` / `CATCH_PASS` set the pace and the pass
+mark. Slow `SPAWN_EVERY` down if the line at your booth skews toward people who
+want to read every card.
 
 ## Booth console (`/admin`)
 
 - **Redeem a code** — type or paste the code a player shows you (case and dashes
-  don't matter). It tells you what to hand over and marks it collected, and it
-  warns you loudly if that code was already redeemed. `Undo` reopens one.
+  don't matter). It shows the tier's options as big buttons; tap whichever one
+  you handed over and it's recorded and marked collected. It warns you loudly if
+  that code was already redeemed, and says what they took. `Undo` reopens one.
 - **Live counters** — plays, emails captured, marketing opt-ins, redemptions,
-  wins, and the casino/classroom split. Refreshes every 15 seconds.
+  wins, and the split across all three games. Refreshes every 15 seconds.
 - **Inventory** — how many of each prize have gone out against its cap.
-- **Export leads CSV** — every play that left an email, with prize, code,
-  opt-in status, and timestamps.
+- **Export leads CSV** — every play that left an email, with the tier, what they
+  were eligible for, what they actually took, code, opt-in status, and
+  timestamps.
 
 ## Storage
 
@@ -116,8 +146,11 @@ email entirely and still get their code on screen.
 
 - Prop the screen in either orientation — every layout is built in viewport and
   container units, so portrait and landscape both work.
-- The kiosk resets itself to the attract loop after 75 seconds of no touches, so
+- The kiosk resets itself to the attract loop after 90 seconds of no touches, so
   an abandoned session never blocks the line.
-- The claim screen counts down 25 seconds and then resets on its own.
+- The claim screen counts down 30 seconds and then resets on its own.
+- Prize requests retry on their own if the venue wifi stutters. If they still
+  can't get through, the player sees a "grab a rep" screen with a retry button
+  rather than being dumped back to the game picker.
 - Open `/admin` on a phone or tablet at the prize table; it's a separate screen
   from the kiosk and works fine on both at once.

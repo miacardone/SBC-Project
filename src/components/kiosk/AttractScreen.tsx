@@ -53,7 +53,7 @@ export function AttractScreen({ onStart }: { onStart: () => void }) {
         </div>
 
         <p className="max-w-[100vmin] text-[2.6vmin] font-medium leading-snug text-white/60">
-          Spin the slots or take the Chargeback Challenge.
+          Spin the slots, take the quiz, or catch the fraud.
           <br />
           <span className="text-white">Every single player walks away with a prize.</span>
         </p>

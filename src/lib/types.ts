@@ -1,16 +1,16 @@
-export type GameMode = "casino" | "classroom";
+export type GameMode = "casino" | "classroom" | "catch";
 
 export type PlayResult = "win" | "lose";
 
 export type PrizeTier = {
-  /** stable id, used in codes + inventory counters */
+  /** stable id, used for inventory counters */
   id: string;
   /** shown big on the prize screen */
   label: string;
-  /** the thing they physically pick up at the booth */
-  item: string;
   /** one line of flavour under the label */
   blurb: string;
+  /** what the player may choose from at the booth */
+  options: string[];
   /** relative odds inside the winning pool */
   weight: number;
   /** hard cap for the whole event; null = unlimited */
@@ -25,11 +25,16 @@ export type Entry = {
   email: string;
   mode: GameMode;
   result: PlayResult;
-  /** quiz score, null for slots */
+  /** game score, null for slots */
   score: number | null;
+  /** out of how many, null for slots */
+  scoreOutOf: number | null;
   tierId: string;
   tierLabel: string;
-  tierItem: string;
+  /** snapshot of what this player may pick from, in case the table changes */
+  tierOptions: string[];
+  /** which one the booth actually handed over */
+  chosenPrize: string | null;
   consent: boolean;
   emailSent: boolean;
   createdAt: string;
@@ -41,6 +46,6 @@ export type Outcome = {
   tier: PrizeTier;
   /** 5 reels x 3 rows of symbol ids, only for casino mode */
   grid: string[][] | null;
-  /** row indexes (0-2) that form the winning line, casino only */
+  /** row index (0-2) that forms the winning line, casino only */
   winningRow: number | null;
 };

@@ -7,14 +7,14 @@ import { Keyboard } from "./Keyboard";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 type Props = {
-  prizeItem: string;
+  prizeLine: string;
   busy: boolean;
   error: string | null;
   onSubmit: (email: string, consent: boolean) => void;
   onSkip: () => void;
 };
 
-export function EmailCapture({ prizeItem, busy, error, onSubmit, onSkip }: Props) {
+export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const valid = EMAIL_RE.test(email);
@@ -31,7 +31,7 @@ export function EmailCapture({ prizeItem, busy, error, onSubmit, onSkip }: Props
             Where do we send <span className="text-cb-red">your code?</span>
           </h1>
           <p className="mt-[1vmin] text-[2.1vmin] font-medium text-white/55">
-            Your {prizeItem.toLowerCase()} is waiting at the booth — the code is your claim ticket.
+            {prizeLine}
           </p>
         </div>
 
