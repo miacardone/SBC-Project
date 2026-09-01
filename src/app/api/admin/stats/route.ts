@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkPin, unauthorized } from "@/lib/admin";
+import { checkPin, unauthorized, usingDefaultPin } from "@/lib/admin";
 import { CONSOLATION, PRIZE_TIERS } from "@/lib/prizes";
 import { backend, listEntries, storageHealthy } from "@/lib/store";
 
@@ -30,8 +30,10 @@ export async function GET(request: Request) {
   const warning = !healthy
     ? "Storage is not writable — plays are not being saved."
     : backend === "file" && process.env.VERCEL
-      ? "Running on Vercel with file storage. Plays will not survive. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
-      : null;
+      ? "Running on Vercel with file storage. Plays will not survive. Connect the Upstash integration, or set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
+      : usingDefaultPin
+        ? "This console is still on the default PIN. Set ADMIN_PIN before the doors open — the lead export is behind it."
+        : null;
 
   return NextResponse.json({
     backend,

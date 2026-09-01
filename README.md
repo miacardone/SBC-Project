@@ -171,6 +171,16 @@ project automatically:
 vercel integration add upstash/upstash-kv --plan free --name cb911-arcade-kv
 ```
 
+That sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. The app accepts either
+those or the `UPSTASH_REDIS_REST_*` pair, so bringing your own Upstash works
+too.
+
+**Blank is not the same as unset in a hosting dashboard.** Pasting
+`.env.example` into Vercel leaves every key as an empty string, and empty
+strings are read as real values by most config code. The app treats blank as
+missing everywhere for exactly this reason — but it means an env var you *think*
+you set may be doing nothing. Check the console banner.
+
 The console shows a red banner if storage isn't writable, or if it's running on
 Vercel with the file backend. Check it before the doors open.
 

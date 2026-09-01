@@ -1,3 +1,4 @@
+import { envNumber } from "./env";
 import type { PrizeTier } from "./types";
 
 /**
@@ -52,7 +53,7 @@ export const CONSOLATION: PrizeTier = {
 };
 
 /** Base odds that a slot pull is a winning pull. */
-export const SLOT_WIN_RATE = Number(process.env.SLOT_WIN_RATE ?? 0.35);
+export const SLOT_WIN_RATE = envNumber("SLOT_WIN_RATE", 0.35);
 
 export function tierById(id: string): PrizeTier {
   if (id === CONSOLATION.id) return CONSOLATION;

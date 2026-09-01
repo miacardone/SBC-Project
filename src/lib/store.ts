@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { envText } from "./env";
 import { CONSOLATION, PRIZE_TIERS } from "./prizes";
 import type { Entry } from "./types";
 
@@ -17,13 +18,16 @@ import type { Entry } from "./types";
  * through an id index and inventory comes from counters, both O(1).
  */
 
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Two naming conventions reach the same Upstash database: the ones this
+// project documents, and the KV_* pair the Vercel Marketplace injects when the
+// integration provisions it. Take either, prefer an explicitly configured one.
+const UPSTASH_URL = envText("UPSTASH_REDIS_REST_URL") ?? envText("KV_REST_API_URL");
+const UPSTASH_TOKEN = envText("UPSTASH_REDIS_REST_TOKEN") ?? envText("KV_REST_API_TOKEN");
 
 export const backend: "upstash" | "file" =
   UPSTASH_URL && UPSTASH_TOKEN ? "upstash" : "file";
 
-const DATA_DIR = process.env.KIOSK_DATA_DIR ?? path.join(process.cwd(), ".data");
+const DATA_DIR = envText("KIOSK_DATA_DIR") ?? path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "entries.json");
 
 const ALL_TIER_IDS = [...PRIZE_TIERS.map((t) => t.id), CONSOLATION.id];

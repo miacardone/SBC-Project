@@ -1,8 +1,9 @@
+import { envText } from "./env";
 import type { Entry } from "./types";
 
-const RESEND_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.PRIZE_EMAIL_FROM ?? "Chargebacks911 <arcade@chargebacks911.com>";
-const BOOTH = process.env.BOOTH_LOCATION ?? "the Chargebacks911 booth";
+const RESEND_KEY = envText("RESEND_API_KEY");
+const FROM = envText("PRIZE_EMAIL_FROM") ?? "Chargebacks911 <arcade@chargebacks911.com>";
+const BOOTH = envText("BOOTH_LOCATION") ?? "the Chargebacks911 booth";
 
 export const emailConfigured = Boolean(RESEND_KEY);
 
