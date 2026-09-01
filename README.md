@@ -27,10 +27,11 @@ way into the jackpot pool. At the end they get a full score card with every
 question, what they answered, and what the right answer was.
 
 **Catch** — Catch the Fraud. Orders pop onto the board one detail at a time
-("AVS mismatch · CVV fail", "Verified by 3-D Secure"). Tap the fraudulent ones
-before they clear and leave the good customers alone — tapping a legit order is
-a false decline and counts against you. Catch 7 of 10 to win, all 10 for the
-jackpot. It's the loudest of the three and the one that pulls a crowd.
+("AVS mismatch · CVV fail", "Verified by 3-D Secure") and each one sits there
+for a full five seconds. Tap the fraudulent ones before they clear and leave the
+good customers alone — tapping a legit order is a false decline and counts
+against you. Catch 7 of 10 to win, all 10 for the jackpot. A round runs about
+half a minute. It's the loudest of the three and the one that pulls a crowd.
 
 Losing at any game still awards the consolation tier. Nobody walks away empty
 handed — that's the point.
@@ -63,12 +64,25 @@ working default except email.
 
 | Variable | What it does |
 | --- | --- |
+| `NEXT_PUBLIC_KIOSK_URL` | The address phones resolve when they scan the claim QR. **Read the note below.** |
 | `ADMIN_PIN` | Gate for `/admin`. **Change this before the event.** |
 | `RESEND_API_KEY` | Enables emailing the prize code. Without it the code still shows on screen. |
 | `PRIZE_EMAIL_FROM` | Sender identity on the prize email. Domain must be verified in Resend. |
 | `BOOTH_LOCATION` | Printed in the email — e.g. `"the Chargebacks911 booth (#123)"`. |
 | `SLOT_WIN_RATE` | Share of slot pulls that win a real prize. Default `0.35`. |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Switches storage from a local file to Redis. Required if you deploy. |
+
+### The QR code address
+
+Claiming happens on the player's own phone, so the QR has to point at something
+their phone can reach. `NEXT_PUBLIC_KIOSK_URL` is that address: your deployed
+URL, or the booth laptop's LAN address like `http://192.168.1.42:3000`. Left
+blank it falls back to whatever the kiosk browser's own origin is — which is
+`http://localhost:3000` on a laptop, and **no phone can open that**.
+
+Set it, then walk up to the kiosk with your own phone and scan the code before
+the doors open. The URL is printed in small text under the QR precisely so you
+can catch this.
 
 ### Prizes and inventory
 
@@ -102,6 +116,22 @@ questions. `QUIZ_PASS_SCORE` and `QUIZ_TIME` are in the same file.
 pools, and `CARD_LIFE` / `SPAWN_EVERY` / `CATCH_PASS` set the pace and the pass
 mark. Slow `SPAWN_EVERY` down if the line at your booth skews toward people who
 want to read every card.
+
+## Claiming
+
+When the prize is revealed the kiosk shows a **QR code**. The player scans it,
+and their own phone opens a page that already knows who they are: their score,
+their tier, and the prizes they can choose from. They type their email there —
+with a real keyboard and autofill — and the code appears on their phone and in
+their inbox. The kiosk notices they finished and moves to the code screen on its
+own.
+
+Anyone without a phone taps **"No phone? Type it here instead"** and gets the
+on-screen keyboard, exactly as before. There's also a "no email — just show it"
+escape hatch for people who don't want to hand one over.
+
+Because the claim link lives on the player's phone, it keeps working even after
+the kiosk has reset for the next person.
 
 ## Booth console (`/admin`)
 
@@ -147,7 +177,11 @@ email entirely and still get their code on screen.
 - Prop the screen in either orientation — every layout is built in viewport and
   container units, so portrait and landscape both work.
 - The kiosk resets itself to the attract loop after 90 seconds of no touches, so
-  an abandoned session never blocks the line.
+  an abandoned session never blocks the line. The claim screen gets five minutes
+  instead, since a player finishing on their phone never touches the booth
+  screen.
+- Every screen after a game has a **Home** button in the top-left corner, so
+  staff can clear the kiosk without waiting for the timeout.
 - The claim screen counts down 30 seconds and then resets on its own.
 - Prize requests retry on their own if the venue wifi stutters. If they still
   can't get through, the player sees a "grab a rep" screen with a retry button

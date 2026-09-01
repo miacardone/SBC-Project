@@ -114,6 +114,36 @@ export function BigButton({
   );
 }
 
+/* ------------------------------------------------------------ pill button */
+
+/** The small top-left escape hatch every post-game screen carries. */
+export function PillButton({
+  children,
+  onClick,
+  className = "",
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border border-edge bg-panel/90 px-[2.6vmin] py-[1.2vmin] text-[1.7vmin] font-semibold uppercase tracking-[0.2em] text-white/60 backdrop-blur transition active:scale-95 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Fixed top-left corner slot so Home sits in the same place on every screen. */
+export function CornerControls({ children }: { children: ReactNode }) {
+  return (
+    <div className="absolute left-[3vmin] top-[3vmin] z-30 flex gap-[1.5vmin]">{children}</div>
+  );
+}
+
 /* ------------------------------------------------------------- confetti */
 
 const CONFETTI_COLORS = ["#e31e24", "#ffffff", "#ffc93c", "#ff3b35", "#b9bcc6"];

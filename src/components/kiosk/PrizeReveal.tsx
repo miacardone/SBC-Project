@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Backdrop, Confetti, Logo } from "./Chrome";
+import { Backdrop, Confetti, CornerControls, Logo, PillButton } from "./Chrome";
 import { ReelSymbol } from "@/components/Symbols";
 import type { OutcomeResponse } from "@/lib/client";
 
@@ -10,9 +10,10 @@ type Props = {
   /** e.g. "Caught 8 of 10" — omitted for the slots */
   scoreLine?: string | null;
   onContinue: () => void;
+  onHome: () => void;
 };
 
-export function PrizeReveal({ outcome, scoreLine, onContinue }: Props) {
+export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShown(true), 40);
@@ -26,6 +27,9 @@ export function PrizeReveal({ outcome, scoreLine, onContinue }: Props) {
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-[4vmin] text-center">
       <Backdrop intensity={won ? 1.2 : 0.5} />
       {grand && <Confetti />}
+      <CornerControls>
+        <PillButton onClick={onHome}>Home</PillButton>
+      </CornerControls>
 
       <div className="relative z-10 flex w-full max-w-[130vmin] flex-col items-center gap-[2.6vmin]">
         <Logo className="text-[5.5vmin]" />

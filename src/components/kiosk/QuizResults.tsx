@@ -1,15 +1,16 @@
 "use client";
 
-import { Backdrop, Logo } from "./Chrome";
+import { Backdrop, CornerControls, Logo, PillButton } from "./Chrome";
 import { QUIZ_LENGTH, QUIZ_PASS_SCORE } from "@/lib/quiz";
 import type { AnswerLog } from "./Quiz";
 
 type Props = {
   log: AnswerLog[];
   onContinue: () => void;
+  onHome: () => void;
 };
 
-export function QuizResults({ log, onContinue }: Props) {
+export function QuizResults({ log, onContinue, onHome }: Props) {
   const score = log.filter((entry) => entry.correct).length;
   const perfect = score >= QUIZ_LENGTH;
   const passed = score >= QUIZ_PASS_SCORE;
@@ -17,6 +18,9 @@ export function QuizResults({ log, onContinue }: Props) {
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-[3vmin]">
       <Backdrop intensity={0.5} />
+      <CornerControls>
+        <PillButton onClick={onHome}>Home</PillButton>
+      </CornerControls>
 
       <div className="@container relative z-10 flex w-[min(94vw,120vh)] max-w-[1400px] flex-col gap-[2cqw]">
         <div className="flex items-center justify-between gap-[2cqw]">

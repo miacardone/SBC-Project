@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Backdrop, Bulbs, Logo } from "./Chrome";
+import { Backdrop, Bulbs, CornerControls, Logo, PillButton } from "./Chrome";
 import type { ClaimResponse } from "@/lib/client";
 
 type Props = {
@@ -26,6 +26,9 @@ export function CodeCard({ claim, onDone, resetIn = 30 }: Props) {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-[3vmin] text-center">
       <Backdrop intensity={0.7} />
+      <CornerControls>
+        <PillButton onClick={onDone}>Home</PillButton>
+      </CornerControls>
 
       <div className="relative z-10 flex w-full max-w-[120vmin] flex-col items-center gap-[2.4vmin]">
         <Logo className="text-[5vmin]" />

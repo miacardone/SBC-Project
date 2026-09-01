@@ -105,6 +105,12 @@ export async function getEntry(code: string): Promise<Entry | null> {
   return raw ? (JSON.parse(raw) as Entry) : null;
 }
 
+/** Look a play up by its session id — what the phone claim link carries. */
+export async function getEntryById(id: string): Promise<Entry | null> {
+  const entries = await listEntries();
+  return entries.find((e) => e.id === id) ?? null;
+}
+
 export async function saveEntry(entry: Entry): Promise<Entry> {
   if (backend === "file") {
     return queueFileWrite((db) => {

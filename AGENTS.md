@@ -8,7 +8,9 @@ and storage both talk to REST APIs with `fetch`.
 
 - `src/app/page.tsx` — the whole kiosk as one client state machine
   (`attract → choose → casino | classroom | catch → review → grading → reveal →
-  email → code`), plus the 90-second idle reset and the `trouble` fallback.
+  email → code`), plus the idle reset and the `trouble` fallback.
+- `src/app/claim/[id]/*` — the page the QR opens on the player's phone. Separate
+  from the kiosk: it scrolls, selects text, and uses a native keyboard.
 - `src/components/kiosk/*` — one component per screen. `Chrome.tsx` holds the
   shared logo, marquee bulbs, backdrop and confetti.
 - `src/components/Symbols.tsx` — reel artwork as inline SVG. Gradients live in a
@@ -34,6 +36,10 @@ and storage both talk to REST APIs with `fetch`.
 - **Never lose a player to a network hiccup.** Prize requests retry; storage
   failures are logged and recovered rather than 500'd; a dead end shows the
   `trouble` screen, never a silent bounce back to the game picker.
+- **The idle reset must not fire while someone is on their phone.** A player
+  claiming by QR never touches the kiosk, so the claim stage carries a much
+  longer window than the rest. Anything that adds an off-screen wait needs the
+  same treatment.
 - Sizing is viewport/container units (`vmin`, `cqw`) throughout so the same build
   fills a portrait or landscape kiosk. Avoid fixed pixel sizes in kiosk screens.
 - Game loops keep their board in a ref and mirror it into state. React runs state

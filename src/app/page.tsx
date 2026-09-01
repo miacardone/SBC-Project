@@ -5,13 +5,13 @@ import { SymbolDefs } from "@/components/Symbols";
 import { AttractScreen } from "@/components/kiosk/AttractScreen";
 import { CatchGame } from "@/components/kiosk/CatchGame";
 import { CodeCard } from "@/components/kiosk/CodeCard";
-import { EmailCapture } from "@/components/kiosk/EmailCapture";
+import { ClaimScreen } from "@/components/kiosk/ClaimScreen";
 import { ModeSelect } from "@/components/kiosk/ModeSelect";
 import { PrizeReveal } from "@/components/kiosk/PrizeReveal";
 import { Quiz, type AnswerLog } from "@/components/kiosk/Quiz";
 import { QuizResults } from "@/components/kiosk/QuizResults";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
-import { Backdrop, Logo } from "@/components/kiosk/Chrome";
+import { Backdrop, CornerControls, Logo, PillButton } from "@/components/kiosk/Chrome";
 import { requestClaim, requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
 import { CATCH_TOTAL } from "@/lib/catch";
 import type { GameMode } from "@/lib/types";
@@ -31,6 +31,13 @@ type Stage =
 
 /** Abandoned session? Reset the screen for the next person in line. */
 const IDLE_MS = 90_000;
+
+/**
+ * The claim screen gets far longer, because a player who scans the QR finishes
+ * on their phone and never touches the booth screen again — the idle timer
+ * would otherwise reset the kiosk out from under them mid-typing.
+ */
+const IDLE_MS_CLAIMING = 300_000;
 
 export default function Kiosk() {
   const [stage, setStage] = useState<Stage>("attract");
@@ -62,10 +69,11 @@ export default function Kiosk() {
   useEffect(() => {
     if (stage === "attract") return;
 
-    let timer = setTimeout(reset, IDLE_MS);
+    const idleWindow = stage === "email" ? IDLE_MS_CLAIMING : IDLE_MS;
+    let timer = setTimeout(reset, idleWindow);
     const arm = () => {
       clearTimeout(timer);
-      timer = setTimeout(reset, IDLE_MS);
+      timer = setTimeout(reset, idleWindow);
     };
     window.addEventListener("pointerdown", arm);
     window.addEventListener("keydown", arm);
@@ -205,7 +213,9 @@ export default function Kiosk() {
 
       {stage === "catch" && <CatchGame onFinish={catchFinished} onQuit={reset} />}
 
-      {stage === "review" && <QuizResults log={quizLog} onContinue={settlePrize} />}
+      {stage === "review" && (
+        <QuizResults log={quizLog} onContinue={settlePrize} onHome={reset} />
+      )}
 
       {stage === "grading" && (
         <div className="flex h-full w-full flex-col items-center justify-center gap-[3vmin]">
@@ -221,11 +231,13 @@ export default function Kiosk() {
           outcome={outcome}
           scoreLine={scoreLine}
           onContinue={() => setStage("email")}
+          onHome={reset}
         />
       )}
 
       {stage === "email" && outcome && (
-        <EmailCapture
+        <ClaimScreen
+          outcome={outcome}
           prizeLine={
             outcome.result === "win"
               ? `You've got a ${outcome.prize.label} waiting — the code is your claim ticket at the booth.`
@@ -235,6 +247,11 @@ export default function Kiosk() {
           error={error}
           onSubmit={submitEmail}
           onSkip={skipEmail}
+          onClaimed={(result) => {
+            setClaim(result);
+            setStage("code");
+          }}
+          onHome={reset}
         />
       )}
 
@@ -243,6 +260,9 @@ export default function Kiosk() {
       {stage === "trouble" && (
         <div className="relative flex h-full w-full flex-col items-center justify-center gap-[3vmin] overflow-hidden p-[5vmin] text-center">
           <Backdrop intensity={0.4} />
+          <CornerControls>
+            <PillButton onClick={reset}>Home</PillButton>
+          </CornerControls>
           <div className="relative z-10 flex flex-col items-center gap-[2.4vmin]">
             <Logo className="text-[6vmin]" />
             <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">

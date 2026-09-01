@@ -42,14 +42,15 @@ export const CATCH_TOTAL = 10;
 /** Legit distractors mixed in. */
 const CATCH_DECOYS = 8;
 
-/** Milliseconds a card stays on the board. */
-export const CARD_LIFE = 3300;
-/** Milliseconds between spawns. */
-export const SPAWN_EVERY = 1050;
+/** Milliseconds a card stays on the board. Long enough to actually read it. */
+export const CARD_LIFE = 5000;
+/** Milliseconds between spawns. With MAX_LIVE the board is the real throttle. */
+export const SPAWN_EVERY = 1500;
 /** Board slots. Kept above the live-card ceiling so cards never fight for space. */
 export const SLOTS = 6;
-/** Most cards on the board at once. */
-export const MAX_LIVE = 3;
+/** Most cards on the board at once. With a 5s card life this is what sets the
+ *  round length: 18 cards at 4-in-flight lands around 27 seconds. */
+export const MAX_LIVE = 4;
 /** Fraud catches needed to win a prize. */
 export const CATCH_PASS = 7;
 
