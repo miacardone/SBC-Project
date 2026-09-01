@@ -1,40 +1,64 @@
 export type Transaction = {
   id: string;
   merchant: string;
-  amount: string;
+  /** dollars, as a number — the results screen adds these up */
+  amount: number;
   /** the one detail the player has to read */
   tell: string;
   fraud: boolean;
 };
 
+export function money(amount: number): string {
+  return `$${Math.round(amount).toLocaleString("en-US")}`;
+}
+
+/**
+ * A chargeback costs far more than the sale: the goods are gone, so are the
+ * shipping and the fee, and someone spends an hour fighting it. Industry
+ * estimates land around two to three times the disputed amount.
+ */
+export const TRUE_COST_MULTIPLIER = 2.5;
+
+/** Everything that happened in one round, for the results screen. */
+export type CatchResult = {
+  /** fraud they stopped */
+  caught: Transaction[];
+  /** fraud that cleared */
+  missed: Transaction[];
+  /** good customers they turned away */
+  declined: Transaction[];
+  /** good customers they let through */
+  kept: Transaction[];
+};
+
 /** Cards that must be tapped. */
 const FRAUD: Omit<Transaction, "id">[] = [
-  { merchant: "Luxe Watches", amount: "$2,410", tell: "First order · express ship", fraud: true },
-  { merchant: "GameKeys Direct", amount: "$890", tell: "9 cards tried in 4 minutes", fraud: true },
-  { merchant: "Nova Electronics", amount: "$1,150", tell: "AVS mismatch · CVV fail", fraud: true },
-  { merchant: "Gift Card Hub", amount: "$500", tell: "Max quantity · 2:41 AM", fraud: true },
-  { merchant: "Sneaker Vault", amount: "$740", tell: "Ships to a freight forwarder", fraud: true },
-  { merchant: "Peak Outdoor", amount: "$1,980", tell: "Email created 6 minutes ago", fraud: true },
-  { merchant: "Audio Lab", amount: "$620", tell: "12 declines, then approved", fraud: true },
-  { merchant: "Metro Phones", amount: "$1,320", tell: "Same device · 7 accounts", fraud: true },
-  { merchant: "Bright Beauty", amount: "$455", tell: "Name on card ≠ account name", fraud: true },
-  { merchant: "Trail Bikes", amount: "$3,600", tell: "40x this store's average order", fraud: true },
-  { merchant: "Cloud Credits", amount: "$980", tell: "New device on a VPN exit node", fraud: true },
-  { merchant: "Fine Jewelry Co", amount: "$2,750", tell: "Billing and shipping 3 states apart", fraud: true },
+  { merchant: "Luxe Watches", amount: 2410, tell: "First order · express ship", fraud: true },
+  { merchant: "GameKeys Direct", amount: 890, tell: "9 cards tried in 4 minutes", fraud: true },
+  { merchant: "Nova Electronics", amount: 1150, tell: "AVS mismatch · CVV fail", fraud: true },
+  { merchant: "Gift Card Hub", amount: 500, tell: "Max quantity · 2:41 AM", fraud: true },
+  { merchant: "Sneaker Vault", amount: 740, tell: "Ships to a freight forwarder", fraud: true },
+  { merchant: "Peak Outdoor", amount: 1980, tell: "Email created 6 minutes ago", fraud: true },
+  { merchant: "Audio Lab", amount: 620, tell: "12 declines, then approved", fraud: true },
+  { merchant: "Metro Phones", amount: 1320, tell: "Same device · 7 accounts", fraud: true },
+  { merchant: "Bright Beauty", amount: 455, tell: "Name on card ≠ account name", fraud: true },
+  { merchant: "Trail Bikes", amount: 3600, tell: "40x this store's average order", fraud: true },
+  { merchant: "Cloud Credits", amount: 980, tell: "New device on a VPN exit node", fraud: true },
+  { merchant: "Fine Jewelry Co", amount: 2750, tell: "Billing and shipping 3 states apart", fraud: true },
 ];
 
 /** Cards that must be left alone. Tapping one is a false decline. */
 const LEGIT: Omit<Transaction, "id">[] = [
-  { merchant: "Corner Coffee", amount: "$18", tell: "AVS + CVV match · repeat buyer", fraud: false },
-  { merchant: "Hartley Books", amount: "$64", tell: "Same card, same address, 3 years", fraud: false },
-  { merchant: "Fresh Grocer", amount: "$132", tell: "Matches their last 6 orders", fraud: false },
-  { merchant: "Sunset Yoga", amount: "$89", tell: "Subscription renewal · month 14", fraud: false },
-  { merchant: "Ridge Hardware", amount: "$247", tell: "Verified by 3-D Secure", fraud: false },
-  { merchant: "Delta Supply", amount: "$1,410", tell: "Corporate card · known BIN", fraud: false },
-  { merchant: "Pine Pharmacy", amount: "$41", tell: "Logged in · saved card · midday", fraud: false },
-  { merchant: "Harbor Diner", amount: "$76", tell: "Local pickup · ID on file", fraud: false },
-  { merchant: "Vista Optics", amount: "$310", tell: "Two-day ship to home address", fraud: false },
-  { merchant: "Studio Paints", amount: "$55", tell: "Average basket for this store", fraud: false },
+  { merchant: "Corner Coffee", amount: 18, tell: "AVS + CVV match · repeat buyer", fraud: false },
+  { merchant: "Hartley Books", amount: 64, tell: "Same card, same address, 3 years", fraud: false },
+  { merchant: "Fresh Grocer", amount: 132, tell: "Matches their last 6 orders", fraud: false },
+  { merchant: "Sunset Yoga", amount: 89, tell: "Subscription renewal · month 14", fraud: false },
+  { merchant: "Ridge Hardware", amount: 247, tell: "Verified by 3-D Secure", fraud: false },
+  { merchant: "Delta Supply", amount: 1410, tell: "Corporate card · known BIN", fraud: false },
+  { merchant: "Pine Pharmacy", amount: 41, tell: "Logged in · saved card · midday", fraud: false },
+  { merchant: "Harbor Diner", amount: 76, tell: "Local pickup · ID on file", fraud: false },
+  { merchant: "Vista Optics", amount: 310, tell: "Two-day ship to home address", fraud: false },
+  { merchant: "Studio Paints", amount: 55, tell: "Average basket for this store", fraud: false },
 ];
 
 /** How many fraud cards appear in a round — also the score to beat. */

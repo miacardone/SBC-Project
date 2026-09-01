@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SymbolDefs } from "@/components/Symbols";
 import { AttractScreen } from "@/components/kiosk/AttractScreen";
 import { CatchGame } from "@/components/kiosk/CatchGame";
+import { CatchResults } from "@/components/kiosk/CatchResults";
 import { CodeCard } from "@/components/kiosk/CodeCard";
 import { ClaimScreen } from "@/components/kiosk/ClaimScreen";
 import { ModeSelect } from "@/components/kiosk/ModeSelect";
@@ -13,7 +14,7 @@ import { QuizResults } from "@/components/kiosk/QuizResults";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
 import { Backdrop, CornerControls, Logo, PillButton } from "@/components/kiosk/Chrome";
 import { requestClaim, requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
-import { CATCH_TOTAL } from "@/lib/catch";
+import { CATCH_TOTAL, type CatchResult } from "@/lib/catch";
 import type { GameMode } from "@/lib/types";
 
 type Stage =
@@ -44,6 +45,7 @@ export default function Kiosk() {
   const [mode, setMode] = useState<GameMode>("casino");
   const [score, setScore] = useState<number | null>(null);
   const [quizLog, setQuizLog] = useState<AnswerLog[]>([]);
+  const [catchResult, setCatchResult] = useState<CatchResult | null>(null);
   const [outcome, setOutcome] = useState<OutcomeResponse | null>(null);
   const [claim, setClaim] = useState<ClaimResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,6 +60,7 @@ export default function Kiosk() {
     setStage("attract");
     setScore(null);
     setQuizLog([]);
+    setCatchResult(null);
     setOutcome(null);
     setClaim(null);
     setBusy(false);
@@ -126,10 +129,12 @@ export default function Kiosk() {
   );
 
   const catchFinished = useCallback(
-    (caught: number) => {
+    (result: CatchResult) => {
+      const caught = result.caught.length;
+      setCatchResult(result);
       setScore(caught);
       prefetchPrize("catch", caught);
-      setStage("grading");
+      setStage("review");
     },
     [prefetchPrize]
   );
@@ -213,8 +218,12 @@ export default function Kiosk() {
 
       {stage === "catch" && <CatchGame onFinish={catchFinished} onQuit={reset} />}
 
-      {stage === "review" && (
+      {stage === "review" && mode === "classroom" && (
         <QuizResults log={quizLog} onContinue={settlePrize} onHome={reset} />
+      )}
+
+      {stage === "review" && mode === "catch" && catchResult && (
+        <CatchResults result={catchResult} onContinue={settlePrize} onHome={reset} />
       )}
 
       {stage === "grading" && (

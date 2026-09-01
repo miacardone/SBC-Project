@@ -15,6 +15,8 @@ type TierStat = {
 
 type Stats = {
   backend: string;
+  healthy: boolean;
+  warning: string | null;
   plays: number;
   leads: number;
   consented: number;
@@ -79,7 +81,7 @@ export default function Admin() {
     if (!authed) return;
     const refresh = () => load(pin).catch(() => {});
     const kick = setTimeout(refresh, 0);
-    const id = setInterval(refresh, 15_000);
+    const id = setInterval(refresh, 30_000);
     return () => {
       clearTimeout(kick);
       clearInterval(id);
@@ -195,7 +197,7 @@ export default function Admin() {
             <span className="text-white/50">booth console</span>
           </h1>
           <p className="mt-1 text-xs uppercase tracking-[0.25em] text-white/35">
-            storage: {stats?.backend} · refreshes every 15s
+            storage: {stats?.backend} · refreshes every 30s
           </p>
         </div>
         <div className="flex gap-3">
@@ -217,6 +219,15 @@ export default function Admin() {
           </button>
         </div>
       </header>
+
+      {stats?.warning && (
+        <div className="mb-6 rounded-2xl border-2 border-cb-red bg-cb-red/15 px-5 py-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-cb-red">
+            Storage problem
+          </div>
+          <p className="mt-1 text-lg font-semibold text-white">{stats.warning}</p>
+        </div>
+      )}
 
       {/* redemption desk */}
       <section className="mb-8 rounded-2xl border-2 border-cb-red/50 bg-cb-red/5 p-6">

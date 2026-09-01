@@ -10,6 +10,8 @@ import {
   SLOTS,
   SPAWN_EVERY,
   dealRound,
+  money,
+  type CatchResult,
   type Transaction,
 } from "@/lib/catch";
 
@@ -23,7 +25,7 @@ type LiveCard = {
 type Flash = { text: string; detail: string; tone: "good" | "bad" };
 
 type Props = {
-  onFinish: (caught: number) => void;
+  onFinish: (result: CatchResult) => void;
   onQuit: () => void;
 };
 
@@ -46,6 +48,8 @@ export function CatchGame({ onFinish, onQuit }: Props) {
   // updaters twice in development, and a spawn decided inside one would be
   // thrown away on the second pass.
   const board = useRef<LiveCard[]>([]);
+  // Every card's fate, kept for the results screen.
+  const tally = useRef<CatchResult>({ caught: [], missed: [], declined: [], kept: [] });
   const cursor = useRef(0);
   const lastSpawn = useRef(0);
   const seq = useRef(0);
@@ -82,10 +86,14 @@ export function CatchGame({ onFinish, onQuit }: Props) {
       const now = Date.now();
       const current = board.current;
 
-      // Retire anything that timed out. A fraud card that expires got away.
-      const escapes = current.filter(
-        (c) => now - c.bornAt >= CARD_LIFE && c.card.fraud
-      ).length;
+      // Retire anything that timed out. A fraud card that expires got away;
+      // a legit one that expires is a customer they served without friction.
+      const gone = current.filter((c) => now - c.bornAt >= CARD_LIFE);
+      for (const c of gone) {
+        if (c.card.fraud) tally.current.missed.push(c.card);
+        else tally.current.kept.push(c.card);
+      }
+      const escapes = gone.filter((c) => c.card.fraud).length;
       let next = current.filter((c) => now - c.bornAt < CARD_LIFE);
 
       if (escapes > 0) {
@@ -128,9 +136,9 @@ export function CatchGame({ onFinish, onQuit }: Props) {
 
   useEffect(() => {
     if (phase !== "done") return;
-    const t = setTimeout(() => onFinish(caught), 1400);
+    const t = setTimeout(() => onFinish(tally.current), 1400);
     return () => clearTimeout(t);
-  }, [phase, caught, onFinish]);
+  }, [phase, onFinish]);
 
   /* ------------------------------------------------------------------ taps */
 
@@ -138,9 +146,11 @@ export function CatchGame({ onFinish, onQuit }: Props) {
     board.current = board.current.filter((c) => c.key !== target.key);
     setLive(board.current);
     if (target.card.fraud) {
+      tally.current.caught.push(target.card);
       setCaught((c) => c + 1);
       showFlash({ text: "Caught", detail: target.card.tell, tone: "good" });
     } else {
+      tally.current.declined.push(target.card);
       setFalseDeclines((f) => f + 1);
       showFlash({
         text: "Good customer",
@@ -281,7 +291,7 @@ function TransactionCard({ card, onTap }: { card: LiveCard; onTap: () => void })
           {card.card.merchant}
         </span>
         <span className="font-[family-name:var(--font-display)] text-[2.4cqw] leading-none text-white">
-          {card.card.amount}
+          {money(card.card.amount)}
         </span>
       </div>
 

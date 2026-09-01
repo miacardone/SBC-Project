@@ -33,6 +33,12 @@ good customers alone — tapping a legit order is a false decline and counts
 against you. Catch 7 of 10 to win, all 10 for the jackpot. A round runs about
 half a minute. It's the loudest of the three and the one that pulls a crowd.
 
+The scoreboard afterwards is the sales pitch: revenue protected, what got
+through and what it really costs once fees and shipping land, how many good
+customers they turned away and what those orders were worth, and a net position
+at the bottom. Most people leave that screen having just watched themselves lose
+money to false declines, which is the whole point.
+
 Losing at any game still awards the consolation tier. Nobody walks away empty
 handed — that's the point.
 
@@ -148,16 +154,39 @@ the kiosk has reset for the next person.
 
 ## Storage
 
-Two backends, no extra dependencies:
+Two backends, picked automatically:
 
-- **File** (default) — `.data/entries.json`. The right choice for a laptop
-  driving the booth screen: it keeps working when the venue wifi dies.
-- **Upstash Redis** — used automatically when `UPSTASH_REDIS_REST_URL` and
-  `UPSTASH_REDIS_REST_TOKEN` are set. Use this if you deploy to Vercel, where
-  serverless instances don't share a filesystem.
+- **Upstash Redis** — used whenever `UPSTASH_REDIS_REST_URL` and
+  `UPSTASH_REDIS_REST_TOKEN` are set. **Required for any deployment.** Vercel's
+  filesystem is read-only and isn't shared between instances, so the file
+  backend cannot save a single play there — the symptom is players being told to
+  grab a rep when they submit their email.
+- **File** — `.data/entries.json`, the fallback. Right for a laptop driving the
+  booth screen off its own disk: it keeps working when the venue wifi dies.
 
-`.data/` is gitignored. **Copy it off the machine before you tear down the
-booth** — that file is the lead list.
+Provision Redis through the Vercel Marketplace so the env vars land in the
+project automatically:
+
+```bash
+vercel integration add upstash/upstash-kv --plan free --name cb911-arcade-kv
+```
+
+The console shows a red banner if storage isn't writable, or if it's running on
+Vercel with the file backend. Check it before the doors open.
+
+### Staying inside the free plan
+
+The free Redis tier allows a limited number of commands per day, so the hot
+paths are all O(1): claims resolve through an id index, inventory comes from
+counters instead of scanning the entry list, and the kiosk's claim poll reads a
+single key every three seconds and stops after four minutes. The console's
+full-list refresh is the only scan, and it runs every 30 seconds. A realistic
+booth day lands comfortably inside the free allowance; if you expect a very busy
+one, Upstash's pay-as-you-go is $0.20 per 100K commands and switching is a plan
+change, not a code change.
+
+`.data/` is gitignored. If you run on the file backend, **copy it off the
+machine before you tear down the booth** — that file is the lead list.
 
 ## Email
 

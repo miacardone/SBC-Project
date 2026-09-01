@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkPin, unauthorized } from "@/lib/admin";
 import { CONSOLATION, PRIZE_TIERS } from "@/lib/prizes";
-import { backend, listEntries } from "@/lib/store";
+import { backend, listEntries, storageHealthy } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +23,20 @@ export async function GET(request: Request) {
     };
   });
 
+  const healthy = await storageHealthy();
+
+  // The failure the booth must never discover from a player: a host where the
+  // filesystem isn't writable or isn't shared, with no Redis configured.
+  const warning = !healthy
+    ? "Storage is not writable — plays are not being saved."
+    : backend === "file" && process.env.VERCEL
+      ? "Running on Vercel with file storage. Plays will not survive. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
+      : null;
+
   return NextResponse.json({
     backend,
+    healthy,
+    warning,
     plays: entries.length,
     leads: entries.filter((e) => e.email).length,
     consented: entries.filter((e) => e.consent).length,

@@ -19,8 +19,10 @@ and storage both talk to REST APIs with `fetch`.
   caps, and the draw functions. Edit this when the prize table changes.
 - `src/lib/quiz.ts` / `src/lib/catch.ts` — the two skill games' content, pacing,
   and pass marks.
-- `src/lib/store.ts` — persistence. File-backed by default, Upstash Redis when
-  its env vars are present.
+- `src/lib/store.ts` — persistence. Upstash Redis over REST when its env vars are
+  present, otherwise a JSON file. Nothing on a hot path may scan the entry list:
+  claims resolve through an id index, inventory reads counters, and the kiosk's
+  claim poll reads one key. Only the booth console scans.
 
 ## Conventions
 
@@ -47,3 +49,6 @@ and storage both talk to REST APIs with `fetch`.
   updater gets thrown away — this already cost one bug in `CatchGame`.
 - Everything a booth operator might need to change on event day should be an env
   var or a literal in `src/lib/`, never buried in a component.
+- **A deployment without Redis is broken, not degraded.** Vercel's filesystem is
+  read-only, so the file backend silently saves nothing and every claim fails.
+  The console surfaces that as a banner; keep it that way.

@@ -71,10 +71,17 @@ export function ClaimScreen({
     };
   }, [url]);
 
-  // Watch for the phone finishing the claim.
+  // Watch for the phone finishing the claim. Every read here costs a command
+  // against the storage plan, so it is deliberately unhurried and gives up
+  // before the idle reset would fire anyway.
   useEffect(() => {
     let cancelled = false;
+    const started = Date.now();
     const id = setInterval(async () => {
+      if (Date.now() - started > 240_000) {
+        clearInterval(id);
+        return;
+      }
       try {
         const res = await fetch(`/api/claim/status?id=${encodeURIComponent(outcome.id)}`, {
           cache: "no-store",
@@ -92,7 +99,7 @@ export function ClaimScreen({
       } catch {
         // venue wifi hiccup — the next tick can try again
       }
-    }, 2000);
+    }, 3000);
     return () => {
       cancelled = true;
       clearInterval(id);

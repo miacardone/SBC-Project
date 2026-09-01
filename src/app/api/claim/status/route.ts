@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEntryById } from "@/lib/store";
+import { getClaimed } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,15 +12,13 @@ export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
 
-  const entry = await getEntryById(id);
-  if (!entry) return NextResponse.json({ claimed: false });
-
-  if (!entry.email) return NextResponse.json({ claimed: false });
+  const claimed = await getClaimed(id);
+  if (!claimed) return NextResponse.json({ claimed: false });
 
   return NextResponse.json({
     claimed: true,
-    code: entry.code,
-    options: entry.tierOptions,
-    emailSent: entry.emailSent,
+    code: claimed.code,
+    options: claimed.options,
+    emailSent: claimed.emailSent,
   });
 }

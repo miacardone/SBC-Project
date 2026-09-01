@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { emailConfigured, sendPrizeEmail } from "@/lib/email";
 import { makePrizeCode } from "@/lib/code";
 import { tierById } from "@/lib/prizes";
-import { listEntries, saveEntry, updateEntry } from "@/lib/store";
+import { getEntryById, markClaimed, saveEntry, updateEntry } from "@/lib/store";
 import type { Entry, GameMode } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -69,14 +69,14 @@ export async function POST(request: Request) {
 
   let entry: Entry | null = null;
   try {
-    entry = (await listEntries()).find((e) => e.id === body.id) ?? null;
+    entry = await getEntryById(body.id);
   } catch (err) {
     console.error("[claim] could not read entries:", err);
   }
   if (!entry) entry = await recover(body);
   if (!entry) {
     return NextResponse.json(
-      { error: "Storage is down — please grab a Chargebacks911 rep." },
+      { error: "We couldn't reach the prize desk. Grab a Chargebacks911 rep and they'll sort you out." },
       { status: 503 }
     );
   }
@@ -105,6 +105,13 @@ export async function POST(request: Request) {
 
   const sent = await sendPrizeEmail(updated);
   if (sent) await updateEntry(entry.code, { emailSent: true });
+
+  // Lets the booth screen notice the player finished on their phone.
+  await markClaimed(entry.id, {
+    code: entry.code,
+    options: entry.tierOptions,
+    emailSent: sent,
+  });
 
   return NextResponse.json({
     code: entry.code,
