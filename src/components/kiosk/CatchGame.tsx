@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Logo } from "./Chrome";
+import { fill, useI18n } from "@/lib/i18n";
 import {
   CARD_LIFE,
   CATCH_PASS,
@@ -32,6 +33,7 @@ type Props = {
 const TICK = 100;
 
 export function CatchGame({ onFinish, onQuit }: Props) {
+  const { t } = useI18n();
   const deck = useMemo(() => dealRound(), []);
 
   const [phase, setPhase] = useState<"ready" | "playing" | "done">("ready");
@@ -98,7 +100,7 @@ export function CatchGame({ onFinish, onQuit }: Props) {
 
       if (escapes > 0) {
         setMissed((m) => m + escapes);
-        showFlash({ text: "Got away", detail: "That one becomes a chargeback.", tone: "bad" });
+        showFlash({ text: t.catch.gotAway, detail: t.catch.gotAwayDetail, tone: "bad" });
       }
 
       // Spawn into a free slot.
@@ -130,7 +132,7 @@ export function CatchGame({ onFinish, onQuit }: Props) {
     }, TICK);
 
     return () => clearInterval(id);
-  }, [phase, deck, showFlash]);
+  }, [phase, deck, showFlash, t]);
 
   /* ------------------------------------------------------------------ done */
 
@@ -148,13 +150,13 @@ export function CatchGame({ onFinish, onQuit }: Props) {
     if (target.card.fraud) {
       tally.current.caught.push(target.card);
       setCaught((c) => c + 1);
-      showFlash({ text: "Caught", detail: target.card.tell, tone: "good" });
+      showFlash({ text: t.catch.caughtIt, detail: tellFor(t, target.card), tone: "good" });
     } else {
       tally.current.declined.push(target.card);
       setFalseDeclines((f) => f + 1);
       showFlash({
-        text: "Good customer",
-        detail: "You just declined a real order.",
+        text: t.catch.goodCustomer,
+        detail: t.catch.goodCustomerDetail,
         tone: "bad",
       });
     }
@@ -172,15 +174,15 @@ export function CatchGame({ onFinish, onQuit }: Props) {
             onClick={onQuit}
             className="rounded-full border border-edge bg-panel px-[2cqw] py-[1cqw] text-[1.5cqw] font-semibold uppercase tracking-[0.2em] text-white/60 transition active:scale-95"
           >
-            Quit
+            {t.catch.quit}
           </button>
 
           <div className="text-center">
             <div className="font-[family-name:var(--font-display)] text-[3.2cqw] uppercase leading-none text-white">
-              Catch the <span className="text-cb-red">fraud</span>
+              {t.catch.title} <span className="text-cb-red">{t.catch.titleAccent}</span>
             </div>
             <div className="mt-[0.6cqw] text-[1.3cqw] font-semibold uppercase tracking-[0.3em] text-white/35">
-              Tap the bad orders · leave the good ones alone
+              {t.catch.subtitle}
             </div>
           </div>
 
@@ -189,9 +191,9 @@ export function CatchGame({ onFinish, onQuit }: Props) {
 
         {/* score bar */}
         <div className="flex items-center gap-[1.6cqw]">
-          <Tally label="Caught" value={caught} tone="good" />
-          <Tally label="Missed" value={missed} tone="bad" />
-          <Tally label="Wrongly declined" value={falseDeclines} tone="bad" />
+          <Tally label={t.catch.caught} value={caught} tone="good" />
+          <Tally label={t.catch.missed} value={missed} tone="bad" />
+          <Tally label={t.catch.wronglyDeclined} value={falseDeclines} tone="bad" />
           <div className="ml-auto h-[0.9cqw] w-[26cqw] overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full bg-cb-red transition-[width] duration-200"
@@ -208,7 +210,7 @@ export function CatchGame({ onFinish, onQuit }: Props) {
               return (
                 <div key={slot} className="relative aspect-[16/9]">
                   {occupant ? (
-                    <TransactionCard card={occupant} onTap={() => tap(occupant)} />
+                    <TransactionCard card={occupant} tell={tellFor(t, occupant.card)} onTap={() => tap(occupant)} />
                   ) : (
                     <div className="h-full w-full rounded-[1.4cqw] border border-dashed border-white/8 bg-black/30" />
                   )}
@@ -223,8 +225,7 @@ export function CatchGame({ onFinish, onQuit }: Props) {
               {phase === "ready" ? (
                 <>
                   <p className="max-w-[70%] text-[2.2cqw] font-medium leading-snug text-white/70">
-                    Orders will pop up with one detail each. Tap the ones that smell
-                    like fraud before they clear.
+                    {t.catch.howTo}
                   </p>
                   <div className="mt-[2cqw] font-[family-name:var(--font-display)] text-[12cqw] leading-none text-cb-red">
                     {countdown}
@@ -232,7 +233,7 @@ export function CatchGame({ onFinish, onQuit }: Props) {
                 </>
               ) : (
                 <div className="font-[family-name:var(--font-display)] text-[6cqw] uppercase leading-none text-white">
-                  Time&apos;s up
+                  {t.catch.timesUp}
                 </div>
               )}
             </div>
@@ -262,14 +263,27 @@ export function CatchGame({ onFinish, onQuit }: Props) {
         </div>
 
         <p className="text-center text-[1.5cqw] font-semibold uppercase tracking-[0.3em] text-white/25">
-          Catch {CATCH_PASS} of {CATCH_TOTAL} to win · all {CATCH_TOTAL} for the jackpot
+          {fill(t.catch.footer, { pass: CATCH_PASS, total: CATCH_TOTAL })}
         </p>
       </div>
     </div>
   );
 }
 
-function TransactionCard({ card, onTap }: { card: LiveCard; onTap: () => void }) {
+/** The merchant stays as written; only the tell is translated. */
+function tellFor(t: ReturnType<typeof useI18n>["t"], card: Transaction): string {
+  return (t.cards as Record<string, string>)[card.merchant] ?? card.tell;
+}
+
+function TransactionCard({
+  card,
+  tell,
+  onTap,
+}: {
+  card: LiveCard;
+  tell: string;
+  onTap: () => void;
+}) {
   const [life, setLife] = useState(100);
 
   useEffect(() => {
@@ -295,7 +309,7 @@ function TransactionCard({ card, onTap }: { card: LiveCard; onTap: () => void })
         </span>
       </div>
 
-      <p className="text-[1.7cqw] leading-tight text-white/65">{card.card.tell}</p>
+      <p className="text-[1.7cqw] leading-tight text-white/65">{tell}</p>
 
       <div className="h-[0.5cqw] w-full overflow-hidden rounded-full bg-white/10">
         <div

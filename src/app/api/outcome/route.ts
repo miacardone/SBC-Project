@@ -10,12 +10,53 @@ import { QUIZ_LENGTH, QUIZ_PASS_SCORE } from "@/lib/quiz";
 import { CATCH_PASS, CATCH_TOTAL } from "@/lib/catch";
 import { buildGrid } from "@/lib/slots";
 import { awardedCounts, saveEntry } from "@/lib/store";
-import type { Entry, GameMode, PlayResult, PrizeTier } from "@/lib/types";
+import type { Entry, GameMode, PlayDetail, PlayResult, PrizeTier } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { mode?: GameMode; score?: number };
+type Body = {
+  mode?: GameMode;
+  score?: number;
+  locale?: string;
+  detail?: PlayDetail;
+};
+
+/** Never trust the shape or the size of what a kiosk posts. */
+function cleanDetail(raw: unknown, mode: GameMode): PlayDetail | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const names = (v: unknown) =>
+    Array.isArray(v)
+      ? v.filter((x): x is string => typeof x === "string").slice(0, 40).map((x) => x.slice(0, 80))
+      : [];
+
+  if (mode === "classroom" && Array.isArray(d.answers)) {
+    return {
+      kind: "classroom",
+      answers: d.answers.slice(0, 20).map((a) => {
+        const entry = (a ?? {}) as Record<string, unknown>;
+        return {
+          id: typeof entry.id === "string" ? entry.id.slice(0, 60) : "",
+          picked: typeof entry.picked === "number" ? entry.picked : null,
+          correct: entry.correct === true,
+        };
+      }),
+    };
+  }
+  if (mode === "catch") {
+    return {
+      kind: "catch",
+      caught: names(d.caught),
+      missed: names(d.missed),
+      declined: names(d.declined),
+    };
+  }
+  if (mode === "casino") {
+    return { kind: "casino", bulls: typeof d.bulls === "number" ? d.bulls : 0 };
+  }
+  return null;
+}
 
 const MODES: GameMode[] = ["casino", "classroom", "catch"];
 
@@ -78,6 +119,8 @@ export async function POST(request: Request) {
     result,
     score,
     scoreOutOf,
+    locale: typeof body.locale === "string" ? body.locale.slice(0, 12) : "en",
+    detail: cleanDetail(body.detail, mode),
     tierId: tier.id,
     tierLabel: tier.label,
     tierOptions: tier.options,

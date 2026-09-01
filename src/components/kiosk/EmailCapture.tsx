@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Backdrop, Logo } from "./Chrome";
+import { useI18n } from "@/lib/i18n";
 import { Keyboard } from "./Keyboard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props) {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const valid = EMAIL_RE.test(email);
@@ -28,7 +30,7 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
 
         <div className="text-center">
           <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
-            Where do we send <span className="text-cb-red">your code?</span>
+            {t.email.title} <span className="text-cb-red">{t.email.titleAccent}</span>
           </h1>
           <p className="mt-[1vmin] text-[2.1vmin] font-medium text-white/55">
             {prizeLine}
@@ -42,7 +44,7 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
           }`}
         >
           <span className="truncate font-[family-name:var(--font-display)] text-[4.6vmin] leading-none tracking-wide text-white">
-            {email || <span className="text-white/25">you@company.com</span>}
+            {email || <span className="text-white/25">{t.email.placeholder}</span>}
           </span>
           <span className="ml-[0.4vmin] inline-block h-[4.6vmin] w-[0.4vmin] animate-glow bg-cb-red" />
         </div>
@@ -57,7 +59,8 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
           onClear={() => setEmail("")}
           onSubmit={() => valid && !busy && onSubmit(email, consent)}
           canSubmit={valid && !busy}
-          submitLabel={busy ? "Sending…" : "Get my code"}
+          submitLabel={busy ? t.email.sending : t.email.getMyCode}
+          clearLabel={t.email.clear}
         />
 
         {/* consent + escape hatch */}
@@ -77,8 +80,7 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
               </svg>
             </span>
             <span className="text-[1.8vmin] leading-snug text-white/55">
-              Send me chargeback tips and product news from Chargebacks911. Optional — you get
-              your code either way.
+              {t.email.consent}
             </span>
           </button>
 
@@ -88,7 +90,7 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
             disabled={busy}
             className="shrink-0 text-[1.8vmin] font-semibold uppercase tracking-[0.24em] text-white/35 underline underline-offset-4 transition active:scale-95 disabled:opacity-40"
           >
-            No email — just show it
+            {t.email.skip}
           </button>
         </div>
       </div>

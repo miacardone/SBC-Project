@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Logo } from "./Chrome";
-import { drawRound, QUIZ_LENGTH, QUIZ_TIME, type Question } from "@/lib/quiz";
+import { fill, useI18n } from "@/lib/i18n";
+import { drawRound, QUIZ_LENGTH, QUIZ_PASS_SCORE, QUIZ_TIME, type Question } from "@/lib/quiz";
 
 /** What the player did on one question — feeds the review screen. */
 export type AnswerLog = {
@@ -19,6 +20,7 @@ type Props = {
 const LETTERS = ["A", "B", "C", "D"];
 
 export function Quiz({ onFinish, onQuit }: Props) {
+  const { t } = useI18n();
   const round = useMemo<Question[]>(() => drawRound(), []);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -36,6 +38,8 @@ export function Quiz({ onFinish, onQuit }: Props) {
   }
 
   const question = round[index];
+  // Text lives in the dictionary; the bank keeps ids and answer indexes.
+  const copy = t.questions[question.id as keyof typeof t.questions];
   const isLast = index === round.length - 1;
   const correct = revealed && picked === question.answer;
 
@@ -90,15 +94,15 @@ export function Quiz({ onFinish, onQuit }: Props) {
             onClick={onQuit}
             className="rounded-full border border-edge bg-panel px-[2cqw] py-[1cqw] text-[1.5cqw] font-semibold uppercase tracking-[0.2em] text-white/60 transition active:scale-95"
           >
-            Quit
+            {t.quiz.quit}
           </button>
 
           <div className="text-center">
             <div className="font-[family-name:var(--font-display)] text-[3.2cqw] uppercase leading-none text-white">
-              Chargeback <span className="text-cb-red">Challenge</span>
+              {t.quiz.title} <span className="text-cb-red">{t.quiz.titleAccent}</span>
             </div>
             <div className="mt-[0.6cqw] text-[1.3cqw] font-semibold uppercase tracking-[0.35em] text-white/35">
-              {QUIZ_LENGTH - 1} right to win · {QUIZ_LENGTH} for the jackpot
+              {fill(t.quiz.subtitle, { pass: QUIZ_PASS_SCORE, total: QUIZ_LENGTH })}
             </div>
           </div>
 
@@ -125,7 +129,7 @@ export function Quiz({ onFinish, onQuit }: Props) {
         <div className="rounded-[2cqw] border-2 border-edge bg-gradient-to-b from-panel to-pit p-[3cqw] shadow-[0_2cqw_6cqw_rgb(0_0_0_/_0.7)]">
           <div className="flex items-start justify-between gap-[2cqw]">
             <p className="font-[family-name:var(--font-display)] text-[3.6cqw] uppercase leading-[1.1] text-white">
-              {question.prompt}
+              {copy.prompt}
             </p>
             <div
               className={`shrink-0 rounded-2xl border-2 px-[1.8cqw] py-[1cqw] text-center font-[family-name:var(--font-display)] text-[3cqw] leading-none transition-colors ${
@@ -150,7 +154,7 @@ export function Quiz({ onFinish, onQuit }: Props) {
           )}
 
           <div className="mt-[2.6cqw] grid grid-cols-2 gap-[1.6cqw]">
-            {question.options.map((option, i) => {
+            {copy.options.map((option, i) => {
               const isAnswer = i === question.answer;
               const isPicked = i === picked;
               const state = !revealed
@@ -196,17 +200,17 @@ export function Quiz({ onFinish, onQuit }: Props) {
                   correct ? "bg-emerald-400 text-black" : "bg-cb-red text-white"
                 }`}
               >
-                {correct ? "Correct" : picked === null ? "Time" : "Nope"}
+                {correct ? t.quiz.correct : picked === null ? t.quiz.outOfTime : t.quiz.nope}
               </div>
               <p className="flex-1 text-[1.9cqw] leading-snug text-white/75">
-                {question.explain}
+                {copy.explain}
               </p>
               <button
                 type="button"
                 onClick={next}
                 className="shrink-0 rounded-[1.2cqw] border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[3cqw] py-[1.4cqw] font-[family-name:var(--font-display)] text-[2.4cqw] uppercase tracking-wide text-white shadow-[0_0_3cqw_-0.5cqw_rgb(227_30_36_/_0.9)] transition active:scale-95"
               >
-                {isLast ? "See prize" : "Next"}
+                {isLast ? t.quiz.seePrize : t.quiz.next}
               </button>
             </div>
           )}

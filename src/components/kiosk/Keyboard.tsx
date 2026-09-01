@@ -22,6 +22,7 @@ type Props = {
   onClear: () => void;
   onSubmit: () => void;
   submitLabel?: string;
+  clearLabel?: string;
   canSubmit?: boolean;
 };
 
@@ -57,6 +58,7 @@ export function Keyboard({
   onClear,
   onSubmit,
   submitLabel = "Get my code",
+  clearLabel = "Clear",
   canSubmit = true,
 }: Props) {
   return (
@@ -91,7 +93,7 @@ export function Keyboard({
 
       <div className="flex gap-[1vmin]">
         <Key onClick={onClear} className="grow-[1.2] text-[2vmin] uppercase tracking-widest">
-          Clear
+          {clearLabel}
         </Key>
         <button
           type="button"

@@ -42,6 +42,35 @@ money to false declines, which is the whole point.
 Losing at any game still awards the consolation tier. Nobody walks away empty
 handed — that's the point.
 
+## Languages
+
+Eighteen: English, Spanish, Portuguese, French, German, Italian, Dutch,
+Norwegian, Danish, Finnish, Polish, Russian, Turkish, Mandarin, Japanese,
+Korean, Arabic and Hindi. A globe button on the attract and game-select screens
+opens a grid where each language is written in its own script, which is how
+somebody finds theirs without reading a word of English.
+
+Everything translates, not just the buttons — the quiz questions, their four
+options and the explanation after each one, the fraud tells on the Catch cards,
+the prize tiers and the prize names. Arabic lays the whole kiosk out
+right-to-left. Scripts the display face has no glyphs for (Cyrillic, CJK,
+Arabic, Devanagari) fall back to a heavy system stack instead of rendering as
+empty boxes.
+
+The language follows the player onto their phone: the QR carries it, and the
+claim page renders server-side in the same language.
+
+**These translations have not been reviewed by native speakers.** They are
+careful, and the chargeback terminology is handled deliberately, but this is
+customer-facing copy for your brand in front of an international audience. Get
+at least the marketing consent line reviewed before the doors open — that one
+has legal weight in several of these markets.
+
+Adding a language means adding a file to `src/lib/i18n/locales/` and a row to
+`LOCALES`. TypeScript will refuse to compile a locale that's missing a key, and
+`npm run check:locales` (which runs automatically before every build) fails if
+any language is still shipping English.
+
 ## Prizes are chosen, not assigned
 
 A player wins a *tier*, not a specific object. The code screen and the email
@@ -148,9 +177,23 @@ the kiosk has reset for the next person.
 - **Live counters** — plays, emails captured, marketing opt-ins, redemptions,
   wins, and the split across all three games. Refreshes every 15 seconds.
 - **Inventory** — how many of each prize have gone out against its cap.
-- **Export leads CSV** — every play that left an email, with the tier, what they
-  were eligible for, what they actually took, code, opt-in status, and
-  timestamps.
+- **Export leads CSV** — one row per lead:
+
+  | Column | What it holds |
+  | --- | --- |
+  | `email` | What they typed |
+  | `code` | Their prize code |
+  | `tier` / `eligible_for` | What they won and the options they could pick from |
+  | `prize_taken` | What staff actually handed over — fills in at redemption |
+  | `game` | casino, classroom or catch |
+  | `result`, `score`, `score_out_of` | Win or lose, and the score |
+  | `language` | The language they played in |
+  | `answers` | The full breakdown — every question, what they chose, right or wrong; for Catch, which orders they caught, missed and wrongly declined |
+  | `consent` | Whether they opted into marketing |
+  | `played_at` | Timestamp |
+
+  Questions are written out in English regardless of the language played, so the
+  column stays sortable across all eighteen.
 - **Start the event clean** — wipes every play, lead and inventory counter, so
   setup testing doesn't eat into the prizes you brought. Needs `RESET` typed to
   confirm, and there's no undo, so export the CSV first.

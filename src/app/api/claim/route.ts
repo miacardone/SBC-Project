@@ -36,6 +36,8 @@ async function recover(body: Body): Promise<Entry | null> {
     result: tier.id === "consolation" ? "lose" : "win",
     score: body.score ?? null,
     scoreOutOf: null,
+    locale: "en",
+    detail: null,
     tierId: tier.id,
     tierLabel: tier.label,
     tierOptions: tier.options,

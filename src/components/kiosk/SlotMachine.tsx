@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bulbs, Logo } from "./Chrome";
+import { useI18n } from "@/lib/i18n";
+import { requestOutcome } from "@/lib/client";
 import { ReelSymbol } from "@/components/Symbols";
 import { FILLER_SYMBOLS, BULLS_TO_WIN } from "@/lib/slots";
 import type { OutcomeResponse } from "@/lib/client";
@@ -90,6 +92,7 @@ type Props = {
 };
 
 export function SlotMachine({ onFinish, onQuit }: Props) {
+  const { t, locale } = useI18n();
   const [phase, setPhase] = useState<"ready" | "arming" | "spinning" | "result">("ready");
   const [grid, setGrid] = useState<string[][]>(IDLE_GRID);
   const [nonce, setNonce] = useState(0);
@@ -106,13 +109,7 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
     setWin(0);
 
     try {
-      const res = await fetch("/api/outcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "casino" }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as OutcomeResponse;
+      const data = await requestOutcome("casino", undefined, locale);
 
       setOutcome(data);
       setGrid(data.grid ?? IDLE_GRID);
@@ -125,10 +122,10 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
         setPhase("result");
       }, total);
     } catch {
-      setError("Machine hiccuped. Tap spin to try again.");
+      setError(t.slots.hiccup);
       setPhase("ready");
     }
-  }, [phase]);
+  }, [phase, t.slots.hiccup, locale]);
 
   // Once the reels land, give people a beat to enjoy it, then move on.
   useEffect(() => {
@@ -161,14 +158,16 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
           <div className="font-[family-name:var(--font-display)] text-[5.2cqw] uppercase leading-none">
             {phase === "result" ? (
               won ? (
-                <span className="text-gold">Winner!</span>
+                <span className="text-gold">{t.slots.winner}</span>
               ) : (
-                <span className="text-white/70">So close.</span>
+                <span className="text-white/70">{t.slots.soClose}</span>
               )
             ) : (
               <>
-                <span className="text-white">{BULLS_TO_WIN} bulls</span>{" "}
-                <span className="text-cb-red">= win!</span>
+                <span className="text-white">
+                  {BULLS_TO_WIN} {t.slots.bulls}
+                </span>{" "}
+                <span className="text-cb-red">{t.slots.equalsWin}</span>
               </>
             )}
           </div>
@@ -195,9 +194,9 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
 
         {/* meters */}
         <div className="mt-[2.4cqw] grid grid-cols-3 gap-[1.4cqw]">
-          <Meter label="Balance" value={`$${balance.toFixed(2)}`} accent />
-          <Meter label="Bet" value="$9.11" />
-          <Meter label="Win" value={`$${win.toFixed(2)}`} highlight={win > 0} />
+          <Meter label={t.slots.balance} value={`$${balance.toFixed(2)}`} accent />
+          <Meter label={t.slots.bet} value="$9.11" />
+          <Meter label={t.slots.win} value={`$${win.toFixed(2)}`} highlight={win > 0} />
         </div>
 
         {/* controls */}
@@ -208,7 +207,7 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
             disabled={busy}
             className="rounded-[1.2cqw] border border-edge bg-gradient-to-b from-panel to-pit py-[1.6cqw] font-[family-name:var(--font-display)] text-[2.4cqw] uppercase tracking-wider text-white/70 transition active:scale-95 disabled:opacity-30"
           >
-            Back
+            {t.slots.back}
           </button>
 
           <button
@@ -217,16 +216,16 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
             disabled={busy || phase === "result"}
             className="relative overflow-hidden rounded-[1.2cqw] border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep py-[1.6cqw] font-[family-name:var(--font-display)] text-[4.4cqw] uppercase leading-none tracking-wide text-white shadow-[0_0_5cqw_-1cqw_rgb(227_30_36_/_1),inset_0_0.3cqw_0_rgb(255_255_255_/_0.4)] transition active:scale-[0.97] disabled:opacity-50"
           >
-            <span className="relative z-10">{busy ? "Rolling…" : phase === "result" ? "—" : "Spin"}</span>
+            <span className="relative z-10">{busy ? t.slots.rolling : phase === "result" ? "—" : t.slots.spin}</span>
             {!busy && phase !== "result" && (
               <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/25 blur-md animate-sweep" />
             )}
           </button>
 
           <div className="flex items-center justify-center rounded-[1.2cqw] border border-edge bg-pit px-[1cqw] text-center font-[family-name:var(--font-sans)] text-[1.5cqw] font-semibold uppercase leading-tight tracking-[0.15em] text-white/45">
-            Every spin
+            {t.slots.everySpin}
             <br />
-            wins merch
+            {t.slots.winsMerch}
           </div>
         </div>
 

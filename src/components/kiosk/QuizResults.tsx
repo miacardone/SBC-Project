@@ -2,6 +2,7 @@
 
 import { Backdrop, CornerControls, Logo, PillButton } from "./Chrome";
 import { QUIZ_LENGTH, QUIZ_PASS_SCORE } from "@/lib/quiz";
+import { useI18n } from "@/lib/i18n";
 import type { AnswerLog } from "./Quiz";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function QuizResults({ log, onContinue, onHome }: Props) {
+  const { t } = useI18n();
   const score = log.filter((entry) => entry.correct).length;
   const perfect = score >= QUIZ_LENGTH;
   const passed = score >= QUIZ_PASS_SCORE;
@@ -19,7 +21,7 @@ export function QuizResults({ log, onContinue, onHome }: Props) {
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-[3vmin]">
       <Backdrop intensity={0.5} />
       <CornerControls>
-        <PillButton onClick={onHome}>Home</PillButton>
+        <PillButton onClick={onHome}>{t.common.home}</PillButton>
       </CornerControls>
 
       <div className="@container relative z-10 flex w-[min(94vw,120vh)] max-w-[1400px] flex-col gap-[2cqw]">
@@ -27,7 +29,7 @@ export function QuizResults({ log, onContinue, onHome }: Props) {
           <Logo className="w-[11cqw] text-[3.6cqw]" />
           <div className="text-center">
             <div className="font-[family-name:var(--font-display)] text-[3cqw] uppercase leading-none text-white/50">
-              You scored
+              {t.quizResults.youScored}
             </div>
             <div
               className={`font-[family-name:var(--font-display)] text-[9cqw] leading-none ${
@@ -40,18 +42,19 @@ export function QuizResults({ log, onContinue, onHome }: Props) {
           </div>
           <div className="w-[11cqw] text-right text-[1.5cqw] font-semibold uppercase leading-tight tracking-[0.2em] text-white/35">
             {perfect
-              ? "Jackpot pool unlocked"
+              ? t.quizResults.jackpotUnlocked
               : passed
-                ? "Prize unlocked"
-                : "Everyone still wins"}
+                ? t.quizResults.prizeUnlocked
+                : t.quizResults.everyoneWins}
           </div>
         </div>
 
         {/* review */}
         <div className="flex flex-col gap-[1cqw]">
           {log.map((entry, i) => {
+            const copy = t.questions[entry.question.id as keyof typeof t.questions];
             const chosen =
-              entry.picked === null ? "Ran out of time" : entry.question.options[entry.picked];
+              entry.picked === null ? t.quizResults.ranOutOfTime : copy.options[entry.picked];
             return (
               <div
                 key={entry.question.id}
@@ -70,24 +73,25 @@ export function QuizResults({ log, onContinue, onHome }: Props) {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-[1.8cqw] font-semibold leading-tight text-white">
-                    {entry.question.prompt}
+                    {copy.prompt}
                   </p>
                   <p className="mt-[0.5cqw] text-[1.6cqw] leading-tight text-white/55">
                     {entry.correct ? (
                       <>
-                        You said <span className="text-emerald-300">{chosen}</span>
+                        {t.quizResults.youSaid}{" "}
+                        <span className="text-emerald-300">{chosen}</span>
                       </>
                     ) : (
                       <>
-                        You said <span className="text-cb-red-hot">{chosen}</span> · answer:{" "}
-                        <span className="text-emerald-300">
-                          {entry.question.options[entry.question.answer]}
-                        </span>
+                        {t.quizResults.youSaid}{" "}
+                        <span className="text-cb-red-hot">{chosen}</span> ·{" "}
+                        {t.quizResults.answerWas}:{" "}
+                        <span className="text-emerald-300">{copy.options[entry.question.answer]}</span>
                       </>
                     )}
                   </p>
                   <p className="mt-[0.4cqw] text-[1.5cqw] leading-tight text-white/35">
-                    {entry.question.explain}
+                    {copy.explain}
                   </p>
                 </div>
               </div>
@@ -100,7 +104,7 @@ export function QuizResults({ log, onContinue, onHome }: Props) {
           onClick={onContinue}
           className="relative mx-auto overflow-hidden rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[6cqw] py-[1.8cqw] font-[family-name:var(--font-display)] text-[3.4cqw] uppercase leading-none tracking-wide text-white shadow-[0_0_4cqw_-1cqw_rgb(227_30_36_/_0.95)] transition active:scale-[0.97]"
         >
-          <span className="relative z-10">See my prize</span>
+          <span className="relative z-10">{t.quizResults.seeMyPrize}</span>
           <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/25 blur-md animate-sweep" />
         </button>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { Backdrop, CornerControls, Logo, PillButton } from "./Chrome";
+import { useI18n } from "@/lib/i18n";
 import { EmailCapture } from "./EmailCapture";
 import type { ClaimResponse, OutcomeResponse } from "@/lib/client";
 
@@ -34,6 +35,7 @@ export function ClaimScreen({
   onClaimed,
   onHome,
 }: Props) {
+  const { t, locale } = useI18n();
   const [mode, setMode] = useState<"qr" | "keyboard">("qr");
   const [svg, setSvg] = useState<string | null>(null);
 
@@ -46,9 +48,13 @@ export function ClaimScreen({
     (typeof window === "undefined" ? "" : window.location.origin)
   );
 
+  // The phone page opens in whatever language they picked at the kiosk.
   const url = useMemo(
-    () => (origin ? `${origin.replace(/\/$/, "")}/claim/${outcome.id}` : null),
-    [origin, outcome.id]
+    () =>
+      origin
+        ? `${origin.replace(/\/$/, "")}/claim/${outcome.id}${locale === "en" ? "" : `?lang=${locale}`}`
+        : null,
+    [origin, outcome.id, locale]
   );
 
   useEffect(() => {
@@ -110,8 +116,8 @@ export function ClaimScreen({
     return (
       <div className="relative h-full w-full">
         <CornerControls>
-          <PillButton onClick={onHome}>Home</PillButton>
-          <PillButton onClick={() => setMode("qr")}>Back to QR</PillButton>
+          <PillButton onClick={onHome}>{t.common.home}</PillButton>
+          <PillButton onClick={() => setMode("qr")}>{t.claim.backToQr}</PillButton>
         </CornerControls>
         <EmailCapture
           prizeLine={prizeLine}
@@ -128,7 +134,7 @@ export function ClaimScreen({
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-[4vmin]">
       <Backdrop intensity={0.5} />
       <CornerControls>
-        <PillButton onClick={onHome}>Home</PillButton>
+        <PillButton onClick={onHome}>{t.common.home}</PillButton>
       </CornerControls>
 
       <div className="relative z-10 flex w-full max-w-[150vmin] flex-col items-center gap-[3vmin]">
@@ -136,10 +142,10 @@ export function ClaimScreen({
 
         <div className="text-center">
           <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
-            Scan to grab <span className="text-cb-red">your prize</span>
+            {t.claim.title} <span className="text-cb-red">{t.claim.titleAccent}</span>
           </h1>
           <p className="mt-[1vmin] text-[2.1vmin] font-medium text-white/55">
-            Your score and your code are waiting on your phone — no typing on this thing.
+            {t.claim.subtitle}
           </p>
         </div>
 
@@ -168,11 +174,7 @@ export function ClaimScreen({
           {/* what happens next */}
           <div className="flex max-w-[60vmin] flex-col justify-center gap-[2.4vmin]">
             <ol className="flex flex-col gap-[1.8vmin]">
-              {[
-                "Point your camera at the code",
-                "Your score and prize are already on the page",
-                "Drop in your email and the code is yours",
-              ].map((step, i) => (
+              {t.claim.steps.map((step, i) => (
                 <li key={step} className="flex items-center gap-[2vmin]">
                   <span className="flex h-[5vmin] w-[5vmin] shrink-0 items-center justify-center rounded-full border-2 border-cb-red/60 bg-cb-red/10 font-[family-name:var(--font-display)] text-[2.4vmin] leading-none text-white">
                     {i + 1}
@@ -191,7 +193,7 @@ export function ClaimScreen({
               onClick={() => setMode("keyboard")}
               className="rounded-2xl border-2 border-edge bg-gradient-to-b from-panel to-pit px-[3vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[2.8vmin] uppercase leading-none tracking-wide text-white/80 transition active:scale-[0.98]"
             >
-              No phone? Type it here instead
+              {t.claim.noPhone}
             </button>
           </div>
         </div>

@@ -97,6 +97,22 @@ input, textarea { user-select: text; }
   background-size: 64px 64px;
 }
 
+/* Anton has no Cyrillic, CJK, Arabic or Devanagari glyphs. Rather than render
+   headings as tofu, those locales borrow a heavy system stack. */
+.system-display {
+  --font-display: "Helvetica Neue", "Hiragino Sans", "Yu Gothic UI",
+    "Microsoft YaHei", "Malgun Gothic", "Noto Sans", "Segoe UI", system-ui, sans-serif;
+}
+.system-display .font-\[family-name\:var\(--font-display\)\] {
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+/* Arabic reads right to left; the marquee and corner controls follow. */
+[dir="rtl"] {
+  text-align: right;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

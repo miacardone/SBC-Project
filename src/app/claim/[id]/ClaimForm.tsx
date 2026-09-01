@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Dictionary } from "@/lib/i18n/locales/en";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
@@ -8,9 +9,12 @@ type Props = {
   id: string;
   /** set when this play was already claimed — skip straight to the code */
   existingCode: string | null;
+  /** copy comes from the server so the page renders in the right language */
+  dict: Dictionary;
 };
 
-export function ClaimForm({ id, existingCode }: Props) {
+export function ClaimForm({ id, existingCode, dict }: Props) {
+  const t = dict.phone;
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -30,13 +34,13 @@ export function ClaimForm({ id, existingCode }: Props) {
       });
       const data = (await res.json()) as { code?: string; emailSent?: boolean; error?: string };
       if (!res.ok || !data.code) {
-        setError(data.error ?? "Something went wrong. Ask a rep at the booth.");
+        setError(data.error ?? t.problem);
         return;
       }
       setCode(data.code);
       setEmailSent(Boolean(data.emailSent));
     } catch {
-      setError("No connection. Ask a rep at the booth.");
+      setError(t.offline);
     } finally {
       setBusy(false);
     }
@@ -47,7 +51,7 @@ export function ClaimForm({ id, existingCode }: Props) {
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border-2 border-dashed border-cb-red bg-black/60 px-5 py-6 text-center">
           <div className="text-[11px] font-semibold uppercase tracking-[0.35em] text-white/40">
-            Prize code
+            {t.prizeCode}
           </div>
           <div className="mt-2 select-text font-[family-name:var(--font-display)] text-4xl tracking-[0.08em] text-white">
             {code}
@@ -55,9 +59,7 @@ export function ClaimForm({ id, existingCode }: Props) {
         </div>
 
         <p className="text-center text-sm leading-relaxed text-white/55">
-          {emailSent
-            ? "A copy is in your inbox. Show this screen at the Chargebacks911 booth to pick your prize."
-            : "Screenshot this. Show it at the Chargebacks911 booth to pick your prize."}
+          {emailSent ? t.withEmail : t.withoutEmail}
         </p>
       </div>
     );
@@ -67,7 +69,7 @@ export function ClaimForm({ id, existingCode }: Props) {
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/40">
-          Email
+          {t.emailLabel}
         </span>
         <input
           type="email"
@@ -97,8 +99,7 @@ export function ClaimForm({ id, existingCode }: Props) {
           </svg>
         </span>
         <span className="text-sm leading-snug text-white/55">
-          Send me chargeback tips and product news from Chargebacks911. Optional — you get
-          your code either way.
+          {dict.email.consent}
         </span>
       </button>
 
@@ -110,7 +111,7 @@ export function ClaimForm({ id, existingCode }: Props) {
         disabled={!EMAIL_RE.test(email) || busy}
         className="rounded-xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep py-4 font-[family-name:var(--font-display)] text-2xl uppercase tracking-wide text-white transition active:scale-[0.98] disabled:opacity-35"
       >
-        {busy ? "Sending…" : "Get my code"}
+        {busy ? t.sending : t.getMyCode}
       </button>
     </div>
   );

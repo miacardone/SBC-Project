@@ -1,4 +1,4 @@
-import type { GameMode, PlayResult } from "./types";
+import type { GameMode, PlayDetail, PlayResult } from "./types";
 
 export type PrizeView = {
   id: string;
@@ -36,6 +36,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function requestOutcome(
   mode: GameMode,
   score?: number,
+  locale = "en",
+  detail?: PlayDetail,
   attempts = 3
 ): Promise<OutcomeResponse> {
   let lastError: unknown;
@@ -45,7 +47,7 @@ export async function requestOutcome(
       const res = await fetch("/api/outcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, score }),
+        body: JSON.stringify({ mode, score, locale, detail }),
       });
       if (!res.ok) throw new Error(`outcome ${res.status}`);
       return (await res.json()) as OutcomeResponse;

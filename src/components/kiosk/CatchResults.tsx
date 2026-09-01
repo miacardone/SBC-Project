@@ -1,6 +1,7 @@
 "use client";
 
 import { Backdrop, CornerControls, Logo, PillButton } from "./Chrome";
+import { fill, useI18n } from "@/lib/i18n";
 import {
   CATCH_PASS,
   CATCH_TOTAL,
@@ -19,6 +20,7 @@ type Props = {
 const sum = (rows: Transaction[]) => rows.reduce((total, r) => total + r.amount, 0);
 
 export function CatchResults({ result, onContinue, onHome }: Props) {
+  const { t } = useI18n();
   const caught = result.caught.length;
   const perfect = caught >= CATCH_TOTAL;
   const passed = caught >= CATCH_PASS;
@@ -37,7 +39,7 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-[3vmin]">
       <Backdrop intensity={0.5} />
       <CornerControls>
-        <PillButton onClick={onHome}>Home</PillButton>
+        <PillButton onClick={onHome}>{t.common.home}</PillButton>
       </CornerControls>
 
       <div className="@container relative z-10 flex w-[min(94vw,104vh)] max-w-[1400px] flex-col gap-[2cqw]">
@@ -46,7 +48,7 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
           <Logo className="w-[11cqw] text-[3.4cqw]" />
           <div className="text-center">
             <div className="font-[family-name:var(--font-display)] text-[2.6cqw] uppercase leading-none text-white/50">
-              You caught
+              {t.catchResults.youCaught}
             </div>
             <div
               className={`font-[family-name:var(--font-display)] text-[8cqw] leading-none ${
@@ -59,45 +61,45 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
           </div>
           <div className="w-[11cqw] text-right text-[1.4cqw] font-semibold uppercase leading-tight tracking-[0.2em] text-white/35">
             {perfect
-              ? "Jackpot pool unlocked"
+              ? t.catchResults.jackpotUnlocked
               : passed
-                ? "Prize unlocked"
-                : "Everyone still wins"}
+                ? t.catchResults.prizeUnlocked
+                : t.catchResults.everyoneWins}
           </div>
         </div>
 
         {/* the damage */}
         <div className="grid grid-cols-2 gap-[1.4cqw] landscape:grid-cols-4">
           <Stat
-            label="Revenue protected"
+            label={t.catchResults.revenueProtected}
             value={money(protectedRevenue)}
-            note={`${caught} fraudulent order${caught === 1 ? "" : "s"} stopped`}
+            note={fill(t.catchResults.ordersStopped, { count: caught })}
             tone="good"
           />
           <Stat
-            label="Lost to chargebacks"
+            label={t.catchResults.lostToChargebacks}
             value={money(lost)}
             note={
               lost > 0
-                ? `≈ ${money(trueCost)} once fees and shipping land`
-                : "Nothing got through"
+                ? fill(t.catchResults.trueCost, { amount: money(trueCost) })
+                : t.catchResults.nothingGotThrough
             }
             tone={lost > 0 ? "bad" : "good"}
           />
           <Stat
-            label="Good customers lost"
+            label={t.catchResults.goodCustomersLost}
             value={String(result.declined.length)}
             note={
               result.declined.length > 0
-                ? `${money(turnedAway)} in orders you declined`
-                : "You didn't decline a single one"
+                ? fill(t.catchResults.ordersDeclined, { amount: money(turnedAway) })
+                : t.catchResults.noneDeclined
             }
             tone={result.declined.length > 0 ? "bad" : "good"}
           />
           <Stat
-            label="Customers kept"
+            label={t.catchResults.customersKept}
             value={String(kept)}
-            note="Served without friction"
+            note={t.catchResults.servedWithoutFriction}
             tone="good"
           />
         </div>
@@ -109,7 +111,7 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
           }`}
         >
           <span className="text-[1.5cqw] font-semibold uppercase tracking-[0.3em] text-white/45">
-            Net position
+            {t.catchResults.netPosition}
           </span>
           <div
             className={`mt-[0.6cqw] font-[family-name:var(--font-display)] text-[5cqw] leading-none ${
@@ -120,8 +122,7 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
             {money(Math.abs(net))}
           </div>
           <p className="mt-[0.8cqw] text-[1.7cqw] text-white/50">
-            Revenue you protected, minus the true cost of what got through and the good
-            orders you turned away.
+            {t.catchResults.netExplain}
           </p>
         </div>
 
@@ -129,10 +130,22 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
         {(result.missed.length > 0 || result.declined.length > 0) && (
           <div className="flex flex-col gap-[1cqw]">
             {result.missed.slice(0, 2).map((row) => (
-              <Row key={`m-${row.id}`} row={row} verdict="Got through" tone="bad" />
+              <Row
+                key={`m-${row.id}`}
+                row={row}
+                tell={cardTell(t, row)}
+                verdict={t.catchResults.gotThrough}
+                tone="bad"
+              />
             ))}
             {result.declined.slice(0, 1).map((row) => (
-              <Row key={`d-${row.id}`} row={row} verdict="Was legit" tone="warn" />
+              <Row
+                key={`d-${row.id}`}
+                row={row}
+                tell={cardTell(t, row)}
+                verdict={t.catchResults.wasLegit}
+                tone="warn"
+              />
             ))}
           </div>
         )}
@@ -142,7 +155,7 @@ export function CatchResults({ result, onContinue, onHome }: Props) {
           onClick={onContinue}
           className="relative mx-auto overflow-hidden rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[6cqw] py-[1.6cqw] font-[family-name:var(--font-display)] text-[3.2cqw] uppercase leading-none tracking-wide text-white shadow-[0_0_4cqw_-1cqw_rgb(227_30_36_/_0.95)] transition active:scale-[0.97]"
         >
-          <span className="relative z-10">See my prize</span>
+          <span className="relative z-10">{t.catchResults.seeMyPrize}</span>
           <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/25 blur-md animate-sweep" />
         </button>
       </div>
@@ -178,12 +191,19 @@ function Stat({
   );
 }
 
+/** Merchants stay as written; only the tell is translated. */
+function cardTell(t: ReturnType<typeof useI18n>["t"], row: Transaction): string {
+  return (t.cards as Record<string, string>)[row.merchant] ?? row.tell;
+}
+
 function Row({
   row,
+  tell,
   verdict,
   tone,
 }: {
   row: Transaction;
+  tell: string;
   verdict: string;
   tone: "bad" | "warn";
 }) {
@@ -202,7 +222,7 @@ function Row({
       </span>
       <span className="text-[1.8cqw] font-semibold text-white">{row.merchant}</span>
       <span className="text-[1.8cqw] text-white/50">{money(row.amount)}</span>
-      <span className="ml-auto truncate text-[1.6cqw] text-white/45">{row.tell}</span>
+      <span className="ml-auto truncate text-[1.6cqw] text-white/45">{tell}</span>
     </div>
   );
 }

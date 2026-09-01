@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Backdrop, Confetti, CornerControls, Logo, PillButton } from "./Chrome";
+import { prizeName, tierText, useI18n } from "@/lib/i18n";
 import { ReelSymbol } from "@/components/Symbols";
 import type { OutcomeResponse } from "@/lib/client";
 
@@ -14,6 +15,8 @@ type Props = {
 };
 
 export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
+  const { t } = useI18n();
+  const tier = tierText(t, outcome.prize.id);
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShown(true), 40);
@@ -28,7 +31,7 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
       <Backdrop intensity={won ? 1.2 : 0.5} />
       {grand && <Confetti />}
       <CornerControls>
-        <PillButton onClick={onHome}>Home</PillButton>
+        <PillButton onClick={onHome}>{t.common.home}</PillButton>
       </CornerControls>
 
       <div className="relative z-10 flex w-full max-w-[130vmin] flex-col items-center gap-[2.6vmin]">
@@ -52,10 +55,10 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
                   : "text-white"
             }`}
           >
-            {outcome.prize.label}
+            {tier.label}
           </div>
           <p className="mt-[1vmin] text-[2.3vmin] font-medium text-white/55">
-            {outcome.prize.blurb}
+            {tier.blurb}
           </p>
         </div>
 
@@ -74,7 +77,7 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
               <ReelSymbol id={won ? "bull" : "coins"} />
             </div>
             <span className="text-[1.7vmin] font-semibold uppercase tracking-[0.32em] text-white/45">
-              Pick any one of these at the booth
+              {t.reveal.pickAny}
             </span>
           </div>
 
@@ -85,7 +88,7 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
                 className="flex-1 basis-[28vmin] rounded-[1.6vmin] border border-white/15 bg-black/45 px-[2vmin] py-[1.8vmin]"
               >
                 <span className="font-[family-name:var(--font-display)] text-[3.4vmin] uppercase leading-tight text-white">
-                  {option}
+                  {prizeName(t, option)}
                 </span>
               </div>
             ))}
@@ -97,7 +100,7 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
           onClick={onContinue}
           className="relative overflow-hidden rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[6vmin] py-[2vmin] font-[family-name:var(--font-display)] text-[4vmin] uppercase leading-none tracking-wide text-white shadow-[0_0_6vmin_-1vmin_rgb(227_30_36_/_0.95)] transition active:scale-[0.97]"
         >
-          <span className="relative z-10">Get my code</span>
+          <span className="relative z-10">{t.reveal.getMyCode}</span>
           <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/25 blur-md animate-sweep" />
         </button>
       </div>

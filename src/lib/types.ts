@@ -19,6 +19,12 @@ export type PrizeTier = {
   isGrand: boolean;
 };
 
+/** Exactly what the player did, kept for post-event analysis. */
+export type PlayDetail =
+  | { kind: "classroom"; answers: { id: string; picked: number | null; correct: boolean }[] }
+  | { kind: "catch"; caught: string[]; missed: string[]; declined: string[] }
+  | { kind: "casino"; bulls: number };
+
 export type Entry = {
   id: string;
   code: string;
@@ -29,6 +35,10 @@ export type Entry = {
   score: number | null;
   /** out of how many, null for slots */
   scoreOutOf: number | null;
+  /** BCP-47 code of the language they played in */
+  locale: string;
+  /** per-question / per-card breakdown, null for older rows */
+  detail: PlayDetail | null;
   tierId: string;
   tierLabel: string;
   /** snapshot of what this player may pick from, in case the table changes */

@@ -19,6 +19,10 @@ and storage both talk to REST APIs with `fetch`.
   caps, and the draw functions. Edit this when the prize table changes.
 - `src/lib/quiz.ts` / `src/lib/catch.ts` — the two skill games' content, pacing,
   and pass marks.
+- `src/lib/i18n/*` — `locales.ts` is the language registry, `locales/en.ts` is
+  the source of truth every other dictionary is typed against, `dictionaries.ts`
+  is server-safe (the phone claim page renders through it) and `index.tsx` is
+  the client provider.
 - `src/lib/store.ts` — persistence. Upstash Redis over REST when its env vars are
   present, otherwise a JSON file. Nothing on a hot path may scan the entry list:
   claims resolve through an id index, inventory reads counters, and the kiosk's
@@ -47,6 +51,11 @@ and storage both talk to REST APIs with `fetch`.
 - Game loops keep their board in a ref and mirror it into state. React runs state
   updaters twice in development, so a spawn or a score decided *inside* an
   updater gets thrown away — this already cost one bug in `CatchGame`.
+- **No user-facing string belongs in a component.** Everything routes through
+  the dictionary, including quiz content and the Catch card tells. `en.ts`
+  defines the shape; a missing key in any of the other seventeen is a compile
+  error, and `npm run check:locales` fails the build if a language is still
+  aliasing English.
 - Everything a booth operator might need to change on event day should be an env
   var or a literal in `src/lib/`, never buried in a component.
 - **A deployment without Redis is broken, not degraded.** Vercel's filesystem is

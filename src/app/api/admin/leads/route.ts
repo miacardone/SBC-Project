@@ -1,9 +1,38 @@
 import { NextResponse } from "next/server";
 import { checkPin, unauthorized } from "@/lib/admin";
 import { listEntries } from "@/lib/store";
+import { QUESTIONS } from "@/lib/quiz";
+import { LOCALE_NAMES } from "@/lib/i18n/locales";
+import type { Entry } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** A readable account of the round, so the CSV is useful without a decoder. */
+function summarize(entry: Entry): string {
+  const d = entry.detail;
+  if (!d) return "";
+
+  if (d.kind === "classroom") {
+    return d.answers
+      .map((a, i) => {
+        const q = QUESTIONS.find((x) => x.id === a.id);
+        const label = q ? q.prompt : a.id;
+        const chose =
+          a.picked === null ? "no answer" : (q?.options[a.picked] ?? `option ${a.picked + 1}`);
+        return `Q${i + 1} ${a.correct ? "OK" : "X"}: ${label} -> ${chose}`;
+      })
+      .join(" ; ");
+  }
+  if (d.kind === "catch") {
+    return [
+      `caught: ${d.caught.join(", ") || "none"}`,
+      `missed: ${d.missed.join(", ") || "none"}`,
+      `wrongly declined: ${d.declined.join(", ") || "none"}`,
+    ].join(" ; ");
+  }
+  return `bulls on the payline: ${d.bulls}`;
+}
 
 function csvCell(value: string | number | boolean | null): string {
   const s = value === null ? "" : String(value);
@@ -27,6 +56,8 @@ export async function GET(request: Request) {
       "result",
       "score",
       "score_out_of",
+      "language",
+      "answers",
       "consent",
       "email_sent",
       "redeemed_at",
@@ -45,6 +76,8 @@ export async function GET(request: Request) {
           e.result,
           e.score,
           e.scoreOutOf,
+          LOCALE_NAMES[e.locale] ?? e.locale ?? "",
+          summarize(e),
           e.consent,
           e.emailSent,
           e.redeemedAt,

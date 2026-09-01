@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { LOCALE_NAMES } from "@/lib/i18n/locales";
 import type { Entry } from "@/lib/types";
 
 type TierStat = {
@@ -400,7 +401,7 @@ export default function Admin() {
           Latest plays
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-edge">
-          <table className="w-full min-w-[960px] text-left text-sm">
+          <table className="w-full min-w-[1060px] text-left text-sm">
             <thead className="bg-panel text-xs uppercase tracking-widest text-white/40">
               <tr>
                 <th className="px-4 py-3">Time</th>
@@ -409,6 +410,7 @@ export default function Admin() {
                 <th className="px-4 py-3">Tier</th>
                 <th className="px-4 py-3">Took</th>
                 <th className="px-4 py-3">Game</th>
+                <th className="px-4 py-3">Language</th>
                 <th className="px-4 py-3">Opt-in</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
@@ -431,6 +433,9 @@ export default function Admin() {
                     {e.mode}
                     {e.score !== null && e.scoreOutOf !== null && ` ${e.score}/${e.scoreOutOf}`}
                   </td>
+                  <td className="px-4 py-3 text-white/60">
+                    {LOCALE_NAMES[e.locale] ?? e.locale ?? "—"}
+                  </td>
                   <td className="px-4 py-3">{e.consent ? "yes" : "—"}</td>
                   <td className="px-4 py-3">
                     {e.redeemedAt ? (
@@ -447,7 +452,7 @@ export default function Admin() {
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-white/30">
+                  <td colSpan={9} className="px-4 py-10 text-center text-white/30">
                     Nothing yet. Go play a round.
                   </td>
                 </tr>

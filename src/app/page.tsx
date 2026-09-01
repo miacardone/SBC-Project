@@ -13,9 +13,10 @@ import { Quiz, type AnswerLog } from "@/components/kiosk/Quiz";
 import { QuizResults } from "@/components/kiosk/QuizResults";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
 import { Backdrop, CornerControls, Logo, PillButton } from "@/components/kiosk/Chrome";
+import { fill, tierText, useI18n } from "@/lib/i18n";
 import { requestClaim, requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
 import { CATCH_TOTAL, type CatchResult } from "@/lib/catch";
-import type { GameMode } from "@/lib/types";
+import type { GameMode, PlayDetail } from "@/lib/types";
 
 type Stage =
   | "attract"
@@ -41,6 +42,7 @@ const IDLE_MS = 90_000;
 const IDLE_MS_CLAIMING = 300_000;
 
 export default function Kiosk() {
+  const { t, locale } = useI18n();
   const [stage, setStage] = useState<Stage>("attract");
   const [mode, setMode] = useState<GameMode>("casino");
   const [score, setScore] = useState<number | null>(null);
@@ -105,12 +107,15 @@ export default function Kiosk() {
   }, []);
 
   /** Kick off the prize request without blocking the screen. */
-  const prefetchPrize = useCallback((forMode: GameMode, forScore: number) => {
-    const request = requestOutcome(forMode, forScore);
-    request.catch(() => {}); // handled below; this just avoids an unhandled rejection
-    request.then(setOutcome, () => {});
-    pending.current = request;
-  }, []);
+  const prefetchPrize = useCallback(
+    (forMode: GameMode, forScore: number, detail?: PlayDetail) => {
+      const request = requestOutcome(forMode, forScore, locale, detail);
+      request.catch(() => {}); // handled below; this just avoids an unhandled rejection
+      request.then(setOutcome, () => {});
+      pending.current = request;
+    },
+    [locale]
+  );
 
   const slotsFinished = useCallback((result: OutcomeResponse) => {
     setOutcome(result);
@@ -122,7 +127,10 @@ export default function Kiosk() {
       const correct = log.filter((entry) => entry.correct).length;
       setQuizLog(log);
       setScore(correct);
-      prefetchPrize("classroom", correct);
+      prefetchPrize("classroom", correct, {
+        kind: "classroom",
+        answers: log.map((e) => ({ id: e.question.id, picked: e.picked, correct: e.correct })),
+      });
       setStage("review");
     },
     [prefetchPrize]
@@ -133,7 +141,12 @@ export default function Kiosk() {
       const caught = result.caught.length;
       setCatchResult(result);
       setScore(caught);
-      prefetchPrize("catch", caught);
+      prefetchPrize("catch", caught, {
+        kind: "catch",
+        caught: result.caught.map((c) => c.merchant),
+        missed: result.missed.map((c) => c.merchant),
+        declined: result.declined.map((c) => c.merchant),
+      });
       setStage("review");
     },
     [prefetchPrize]
@@ -230,7 +243,7 @@ export default function Kiosk() {
         <div className="flex h-full w-full flex-col items-center justify-center gap-[3vmin]">
           <div className="h-[12vmin] w-[12vmin] animate-glow rounded-full border-[1vmin] border-cb-red border-t-transparent" />
           <p className="font-[family-name:var(--font-display)] text-[4vmin] uppercase tracking-wide text-white/70">
-            Checking the prize shelf…
+            {t.common.grading}
           </p>
         </div>
       )}
@@ -249,8 +262,8 @@ export default function Kiosk() {
           outcome={outcome}
           prizeLine={
             outcome.result === "win"
-              ? `You've got a ${outcome.prize.label} waiting — the code is your claim ticket at the booth.`
-              : "Your prize is waiting at the booth. The code is your claim ticket."
+              ? fill(t.email.wonLine, { label: tierText(t, outcome.prize.id).label })
+              : t.email.loseLine
           }
           busy={busy}
           error={error}
@@ -270,16 +283,15 @@ export default function Kiosk() {
         <div className="relative flex h-full w-full flex-col items-center justify-center gap-[3vmin] overflow-hidden p-[5vmin] text-center">
           <Backdrop intensity={0.4} />
           <CornerControls>
-            <PillButton onClick={reset}>Home</PillButton>
+            <PillButton onClick={reset}>{t.common.home}</PillButton>
           </CornerControls>
           <div className="relative z-10 flex flex-col items-center gap-[2.4vmin]">
             <Logo className="text-[6vmin]" />
             <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
-              Grab a <span className="text-cb-red">rep</span>
+              {t.trouble.title} <span className="text-cb-red">{t.trouble.titleAccent}</span>
             </h1>
             <p className="max-w-[90vmin] text-[2.4vmin] font-medium text-white/60">
-              The prize desk isn&apos;t answering, so we can&apos;t print your code. You still
-              won — tell anyone at the Chargebacks911 booth and they&apos;ll sort you out.
+              {t.trouble.body}
             </p>
             <div className="mt-[1vmin] flex gap-[2vmin]">
               <button
@@ -287,14 +299,14 @@ export default function Kiosk() {
                 onClick={retryPrize}
                 className="rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white transition active:scale-95"
               >
-                Try again
+                {t.trouble.tryAgain}
               </button>
               <button
                 type="button"
                 onClick={reset}
                 className="rounded-2xl border border-edge bg-panel px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white/60 transition active:scale-95"
               >
-                Start over
+                {t.trouble.startOver}
               </button>
             </div>
           </div>
