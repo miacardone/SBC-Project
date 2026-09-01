@@ -27,12 +27,23 @@ export async function GET(request: Request) {
 
   // The failure the booth must never discover from a player: a host where the
   // filesystem isn't writable or isn't shared, with no Redis configured.
+  // Each warning carries its own heading — a PIN problem is not a storage
+  // problem, and a banner that mislabels itself trains people to ignore it.
   const warning = !healthy
-    ? "Storage is not writable — plays are not being saved."
+    ? {
+        title: "Storage problem",
+        text: "Storage is not writable — plays are not being saved.",
+      }
     : backend === "file" && process.env.VERCEL
-      ? "Running on Vercel with file storage. Plays will not survive. Connect the Upstash integration, or set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
+      ? {
+          title: "Storage problem",
+          text: "Running on Vercel with file storage. Plays will not survive. Connect the Upstash integration, or set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+        }
       : usingDefaultPin
-        ? "This console is still on the default PIN. Set ADMIN_PIN before the doors open — the lead export is behind it."
+        ? {
+            title: "Unprotected console",
+            text: "This console is still on the default PIN. Set ADMIN_PIN before the doors open — the lead export is behind it.",
+          }
         : null;
 
   return NextResponse.json({

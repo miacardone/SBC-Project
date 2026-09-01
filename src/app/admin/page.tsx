@@ -16,7 +16,7 @@ type TierStat = {
 type Stats = {
   backend: string;
   healthy: boolean;
-  warning: string | null;
+  warning: { title: string; text: string } | null;
   plays: number;
   leads: number;
   consented: number;
@@ -242,9 +242,9 @@ export default function Admin() {
       {stats?.warning && (
         <div className="mb-6 rounded-2xl border-2 border-cb-red bg-cb-red/15 px-5 py-4">
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-cb-red">
-            Storage problem
+            {stats.warning.title}
           </div>
-          <p className="mt-1 text-lg font-semibold text-white">{stats.warning}</p>
+          <p className="mt-1 text-lg font-semibold text-white">{stats.warning.text}</p>
         </div>
       )}
 
