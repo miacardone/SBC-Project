@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PlayDetail, playSummary } from "@/components/admin/PlayDetail";
 import { LOCALE_NAMES } from "@/lib/i18n/locales";
+import { QUESTIONS } from "@/lib/quiz";
 import type { Entry } from "@/lib/types";
 
 type TierStat = {
@@ -80,7 +81,87 @@ export default function ReportBody() {
     const first = entries.at(-1)?.createdAt;
     const last = entries[0]?.createdAt;
 
+    // What people actually walked away with, ranked. Counts only prizes staff
+    // recorded at the booth, so it reflects the shelf rather than eligibility.
+    const byPrize = new Map<string, number>();
+    for (const e of entries) {
+      if (!e.chosenPrize) continue;
+      byPrize.set(e.chosenPrize, (byPrize.get(e.chosenPrize) ?? 0) + 1);
+    }
+
+    // Per-question correct rate across every quiz played — the closest thing
+    // this booth produces to a read on what the market misunderstands.
+    const asked = new Map<string, { right: number; total: number }>();
+    for (const e of entries) {
+      if (e.detail?.kind !== "classroom") continue;
+      for (const a of e.detail.answers) {
+        const row = asked.get(a.id) ?? { right: 0, total: 0 };
+        row.total += 1;
+        if (a.correct) row.right += 1;
+        asked.set(a.id, row);
+      }
+    }
+    const knowledge = [...asked.entries()]
+      .map(([id, row]) => ({
+        id,
+        prompt: QUESTIONS.find((q) => q.id === id)?.prompt ?? id,
+        answer: QUESTIONS.find((q) => q.id === id)?.options[
+          QUESTIONS.find((q) => q.id === id)?.answer ?? 0
+        ],
+        rate: row.total ? (row.right / row.total) * 100 : 0,
+        total: row.total,
+      }))
+      .sort((a, b) => a.rate - b.rate);
+
+    // Which fraud signals slip past, and which good customers get refused.
+    const fraudSeen = new Map<string, { caught: number; missed: number }>();
+    const legitSeen = new Map<string, { declined: number; kept: number }>();
+    for (const e of entries) {
+      if (e.detail?.kind !== "catch") continue;
+      for (const m of e.detail.caught) {
+        const row = fraudSeen.get(m) ?? { caught: 0, missed: 0 };
+        row.caught += 1;
+        fraudSeen.set(m, row);
+      }
+      for (const m of e.detail.missed) {
+        const row = fraudSeen.get(m) ?? { caught: 0, missed: 0 };
+        row.missed += 1;
+        fraudSeen.set(m, row);
+      }
+      for (const m of e.detail.declined) {
+        const row = legitSeen.get(m) ?? { declined: 0, kept: 0 };
+        row.declined += 1;
+        legitSeen.set(m, row);
+      }
+      for (const m of e.detail.kept ?? []) {
+        const row = legitSeen.get(m) ?? { declined: 0, kept: 0 };
+        row.kept += 1;
+        legitSeen.set(m, row);
+      }
+    }
+    const trickiestFraud = [...fraudSeen.entries()]
+      .map(([merchant, r]) => ({
+        merchant,
+        seen: r.caught + r.missed,
+        missRate: r.caught + r.missed ? (r.missed / (r.caught + r.missed)) * 100 : 0,
+      }))
+      .filter((r) => r.seen > 0)
+      .sort((a, b) => b.missRate - a.missRate);
+    const overDeclined = [...legitSeen.entries()]
+      .map(([merchant, r]) => ({
+        merchant,
+        seen: r.declined + r.kept,
+        declineRate: r.declined + r.kept ? (r.declined / (r.declined + r.kept)) * 100 : 0,
+        declined: r.declined,
+      }))
+      .filter((r) => r.declined > 0)
+      .sort((a, b) => b.declineRate - a.declineRate);
+
     return {
+      prizes: [...byPrize.entries()].sort((a, b) => b[1] - a[1]),
+      knowledge,
+      trickiestFraud,
+      overDeclined,
       languages: [...byLanguage.entries()].sort((a, b) => b[1] - a[1]),
       quiz: scored("classroom"),
       catch: scored("catch"),
@@ -239,6 +320,123 @@ export default function ReportBody() {
             </tbody>
           </table>
         </Section>
+
+        {/* what people took */}
+        {derived.prizes.length > 0 && (
+          <Section title="Most popular prizes">
+            <table className="w-full text-sm">
+              <thead className="border-b border-neutral-300 text-left text-xs uppercase tracking-widest text-neutral-500">
+                <tr>
+                  <th className="py-2">Prize</th>
+                  <th className="py-2">Taken</th>
+                  <th className="py-2">Share of collected</th>
+                </tr>
+              </thead>
+              <tbody>
+                {derived.prizes.map(([name, count]) => (
+                  <tr key={name} className="border-b border-neutral-100">
+                    <td className="py-1.5">{name}</td>
+                    <td className="py-1.5">{count}</td>
+                    <td className="py-1.5 text-neutral-500">
+                      {stats.redeemed ? ((count / stats.redeemed) * 100).toFixed(0) : 0}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs text-neutral-500">
+              Counts only prizes staff recorded at the booth. Use this to decide what to
+              order more of next time.
+            </p>
+          </Section>
+        )}
+
+        {/* knowledge */}
+        {derived.knowledge.length > 0 && (
+          <Section title="What visitors got wrong most">
+            <table className="w-full text-sm">
+              <thead className="border-b border-neutral-300 text-left text-xs uppercase tracking-widest text-neutral-500">
+                <tr>
+                  <th className="py-2">Question</th>
+                  <th className="py-2">Correct</th>
+                  <th className="py-2">Asked</th>
+                </tr>
+              </thead>
+              <tbody>
+                {derived.knowledge.map((q) => (
+                  <tr key={q.id} className="border-b border-neutral-100 align-top">
+                    <td className="py-1.5">
+                      {q.prompt}
+                      <div className="text-xs text-neutral-500">answer: {q.answer}</div>
+                    </td>
+                    <td className="py-1.5 font-semibold">{q.rate.toFixed(0)}%</td>
+                    <td className="py-1.5 text-neutral-500">{q.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs text-neutral-500">
+              Ordered worst first. The questions at the top are the gaps worth writing
+              content about.
+            </p>
+          </Section>
+        )}
+
+        {/* fraud signals */}
+        {(derived.trickiestFraud.length > 0 || derived.overDeclined.length > 0) && (
+          <Section title="Fraud signals">
+            {derived.trickiestFraud.length > 0 && (
+              <>
+                <h3 className="mb-2 text-sm font-semibold">Fraud that slipped past most often</h3>
+                <table className="mb-5 w-full text-sm">
+                  <thead className="border-b border-neutral-300 text-left text-xs uppercase tracking-widest text-neutral-500">
+                    <tr>
+                      <th className="py-2">Order</th>
+                      <th className="py-2">Missed</th>
+                      <th className="py-2">Seen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {derived.trickiestFraud.slice(0, 8).map((r) => (
+                      <tr key={r.merchant} className="border-b border-neutral-100">
+                        <td className="py-1.5">{r.merchant}</td>
+                        <td className="py-1.5 font-semibold">{r.missRate.toFixed(0)}%</td>
+                        <td className="py-1.5 text-neutral-500">{r.seen}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+            {derived.overDeclined.length > 0 && (
+              <>
+                <h3 className="mb-2 text-sm font-semibold">
+                  Good customers refused most often
+                </h3>
+                <table className="w-full text-sm">
+                  <thead className="border-b border-neutral-300 text-left text-xs uppercase tracking-widest text-neutral-500">
+                    <tr>
+                      <th className="py-2">Order</th>
+                      <th className="py-2">Refused</th>
+                      <th className="py-2">Seen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {derived.overDeclined.slice(0, 8).map((r) => (
+                      <tr key={r.merchant} className="border-b border-neutral-100">
+                        <td className="py-1.5">{r.merchant}</td>
+                        <td className="py-1.5 font-semibold">
+                          {r.seen > 0 ? `${r.declineRate.toFixed(0)}%` : `${r.declined}`}
+                        </td>
+                        <td className="py-1.5 text-neutral-500">{r.seen || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </Section>
+        )}
 
         {/* leads */}
         <Section title={`Leads (${stats.leads})`}>

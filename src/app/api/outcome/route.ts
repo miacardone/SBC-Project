@@ -50,6 +50,7 @@ function cleanDetail(raw: unknown, mode: GameMode): PlayDetail | null {
       caught: names(d.caught),
       missed: names(d.missed),
       declined: names(d.declined),
+      kept: names(d.kept),
     };
   }
   if (mode === "casino") {

@@ -22,7 +22,7 @@ export type PrizeTier = {
 /** Exactly what the player did, kept for post-event analysis. */
 export type PlayDetail =
   | { kind: "classroom"; answers: { id: string; picked: number | null; correct: boolean }[] }
-  | { kind: "catch"; caught: string[]; missed: string[]; declined: string[] }
+  | { kind: "catch"; caught: string[]; missed: string[]; declined: string[]; kept?: string[] }
   | { kind: "casino"; bulls: number };
 
 export type Entry = {

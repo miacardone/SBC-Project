@@ -146,6 +146,7 @@ export default function Kiosk() {
         caught: result.caught.map((c) => c.merchant),
         missed: result.missed.map((c) => c.merchant),
         declined: result.declined.map((c) => c.merchant),
+        kept: result.kept.map((c) => c.merchant),
       });
       setStage("review");
     },
