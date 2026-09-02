@@ -113,6 +113,31 @@ input, textarea { user-select: text; }
   text-align: right;
 }
 
+/* The event report is a document, not a kiosk screen: white paper, real page
+   breaks, and none of the browser chrome. */
+.report {
+  color-scheme: light;
+}
+
+@media print {
+  html, body {
+    height: auto;
+    overflow: visible;
+    background: #ffffff !important;
+  }
+  .no-print { display: none !important; }
+  .report {
+    background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .break-inside-avoid { break-inside: avoid; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; break-after: auto; }
+  thead { display: table-header-group; }
+  @page { margin: 16mm; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LOCALE_NAMES } from "@/lib/i18n/locales";
+import { PlayDetail, playSummary } from "@/components/admin/PlayDetail";
 import type { Entry } from "@/lib/types";
 
 type TierStat = {
@@ -45,6 +46,7 @@ export default function Admin() {
   const [notice, setNotice] = useState<{ tone: "ok" | "warn" | "bad"; text: string } | null>(null);
   const [resetText, setResetText] = useState("");
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [open, setOpen] = useState<Entry | null>(null);
 
   const load = useCallback(async (withPin: string) => {
     const headers = { "x-admin-pin": withPin };
@@ -222,6 +224,12 @@ export default function Admin() {
         </div>
         <div className="flex gap-3">
           <a
+            href="/admin/report"
+            className="rounded-xl border border-edge bg-panel px-5 py-3 text-sm font-semibold uppercase tracking-widest text-white/80 active:scale-95"
+          >
+            PDF report
+          </a>
+          <a
             href={`/api/admin/leads?format=csv&pin=${encodeURIComponent(pin)}`}
             className="rounded-xl border border-edge bg-panel px-5 py-3 text-sm font-semibold uppercase tracking-widest text-white/80 active:scale-95"
           >
@@ -398,7 +406,7 @@ export default function Admin() {
       {/* leads */}
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
-          Latest plays
+          Latest plays — tap a row for their answers
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-edge">
           <table className="w-full min-w-[1060px] text-left text-sm">
@@ -417,7 +425,11 @@ export default function Admin() {
             </thead>
             <tbody>
               {entries.slice(0, 200).map((e) => (
-                <tr key={e.code} className="border-t border-edge/60 bg-black/30">
+                <tr
+                  key={e.code}
+                  onClick={() => setOpen(e)}
+                  className="cursor-pointer border-t border-edge/60 bg-black/30 transition hover:bg-white/5"
+                >
                   <td className="whitespace-nowrap px-4 py-3 text-white/45">
                     {new Date(e.createdAt).toLocaleTimeString()}
                   </td>
@@ -461,6 +473,53 @@ export default function Admin() {
           </table>
         </div>
       </section>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setOpen(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl border border-edge bg-panel p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-[family-name:var(--font-display)] text-3xl text-white">
+                  {open.code}
+                </div>
+                <div className="mt-1 text-sm text-white/50">{playSummary(open)}</div>
+                <div className="mt-1 text-sm text-white/40">
+                  {open.email || "no email given"} ·{" "}
+                  {new Date(open.createdAt).toLocaleString()}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(null)}
+                className="rounded-xl border border-edge bg-black/40 px-4 py-2 text-sm font-semibold uppercase tracking-widest text-white/60"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-edge bg-black/40 p-4 text-sm text-white/60">
+              <span className="text-white/40">Eligible for:</span>{" "}
+              {open.tierOptions.join(" · ")}
+              {open.chosenPrize && (
+                <>
+                  <br />
+                  <span className="text-white/40">Took:</span>{" "}
+                  <span className="text-white">{open.chosenPrize}</span>
+                </>
+              )}
+            </div>
+
+            <div className="mt-5">
+              <PlayDetail entry={open} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
