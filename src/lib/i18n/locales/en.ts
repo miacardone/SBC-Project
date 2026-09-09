@@ -407,6 +407,11 @@ export const en = {
     checkEmail: "Check your email",
     boothLine: "Bring your code to {booth}",
     tokenIssued: "Token sent",
+    checkInbox: "Your token is on its way to {hint}",
+    checkInboxHint: "Open it on this phone, then type the code into the machine.",
+    emailUndeliverable: "That address can't receive mail. Try another one.",
+    emailBlocked: "We need an address you actually use.",
+    emailNotSent: "We couldn't send to that address. Try another one.",
     tokenOnPhone: "Your token is on your phone",
   },
 

@@ -198,6 +198,11 @@ export const zh: Dictionary = {
     checkEmail: "查收你的邮件",
     boothLine: "携带你的代码前往 {booth}",
     tokenIssued: "代币已发送",
+    checkInbox: "你的代币正在发往 {hint}",
+    checkInboxHint: "在这部手机上打开邮件，然后把代码输入机器。",
+    emailUndeliverable: "该地址无法接收邮件。请换一个。",
+    emailBlocked: "我们需要一个你真正在用的地址。",
+    emailNotSent: "无法发送到该地址。请换一个。",
     tokenOnPhone: "你的代币在手机上",
   },
 

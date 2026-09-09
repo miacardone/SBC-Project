@@ -198,6 +198,11 @@ export const fi: Dictionary = {
     checkEmail: "Tarkista sähköpostisi",
     boothLine: "Tuo koodisi osastolle {booth}",
     tokenIssued: "Tunnus lähetetty",
+    checkInbox: "Tunnuksesi on matkalla osoitteeseen {hint}",
+    checkInboxHint: "Avaa se tällä puhelimella ja näppäile koodi laitteeseen.",
+    emailUndeliverable: "Tuo osoite ei voi vastaanottaa postia. Kokeile toista.",
+    emailBlocked: "Tarvitsemme osoitteen, jota oikeasti käytät.",
+    emailNotSent: "Emme saaneet lähetettyä tuohon osoitteeseen. Kokeile toista.",
     tokenOnPhone: "Tunnuksesi on puhelimessasi",
   },
 

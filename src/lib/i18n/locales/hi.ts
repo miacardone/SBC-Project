@@ -198,6 +198,11 @@ export const hi: Dictionary = {
     checkEmail: "अपना ईमेल देखें",
     boothLine: "अपना कोड {booth} पर लाएँ",
     tokenIssued: "टोकन भेज दिया गया",
+    checkInbox: "आपका टोकन {hint} पर भेजा जा रहा है",
+    checkInboxHint: "इसी फ़ोन पर मेल खोलें और कोड मशीन में टाइप करें।",
+    emailUndeliverable: "यह पता मेल नहीं ले सकता। कोई दूसरा आज़माएँ।",
+    emailBlocked: "हमें ऐसा पता चाहिए जो आप सच में इस्तेमाल करते हों।",
+    emailNotSent: "हम उस पते पर नहीं भेज सके। कोई दूसरा आज़माएँ।",
     tokenOnPhone: "आपका टोकन आपके फ़ोन पर है",
   },
 

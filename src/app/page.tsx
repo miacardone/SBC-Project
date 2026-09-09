@@ -13,7 +13,14 @@ import { SecondChance } from "@/components/kiosk/SecondChance";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
 import { TokenScreen } from "@/components/kiosk/TokenScreen";
 import { makeSessionId, normalizeCode } from "@/lib/code";
-import { play, PlayFailed, requestToken, type PlayResponse } from "@/lib/client";
+import {
+  play,
+  PlayFailed,
+  requestToken,
+  TokenFailed,
+  tokenMessage,
+  type PlayResponse,
+} from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
 type Stage =
@@ -95,7 +102,7 @@ export default function Kiosk() {
     setStage("capture");
   }, []);
 
-  /** Email typed on the kiosk itself. */
+  /** Email typed on the kiosk itself. The token is emailed, not shown. */
   const submitEmail = useCallback(
     async (email: string, consent: boolean) => {
       setBusy(true);
@@ -103,13 +110,13 @@ export default function Kiosk() {
       try {
         await requestToken({ email, consent, locale, session });
         setStage("token");
-      } catch {
-        setError(t.phone.offline);
+      } catch (err) {
+        setError(tokenMessage(err instanceof TokenFailed ? err.reason : "storage", t));
       } finally {
         setBusy(false);
       }
     },
-    [locale, session, t.phone.offline]
+    [locale, session, t]
   );
 
   /** Enter the token to unlock the spin. */

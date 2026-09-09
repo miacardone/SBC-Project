@@ -198,6 +198,11 @@ export const tr: Dictionary = {
     checkEmail: "E-postanızı kontrol edin",
     boothLine: "Kodunuzu {booth} standına getirin",
     tokenIssued: "Jeton gönderildi",
+    checkInbox: "Jetonunuz {hint} adresine gönderiliyor",
+    checkInboxHint: "Bu telefonda açın ve kodu makineye yazın.",
+    emailUndeliverable: "Bu adres posta alamıyor. Başka bir tane deneyin.",
+    emailBlocked: "Gerçekten kullandığınız bir adres gerekiyor.",
+    emailNotSent: "Bu adrese gönderemedik. Başka bir tane deneyin.",
     tokenOnPhone: "Jetonunuz telefonunuzda",
   },
 

@@ -23,6 +23,7 @@ type Stats = {
   plays: number;
   leads: number;
   secondChances: number;
+  verified: number;
   consented: number;
   redeemed: number;
   casino: number;
@@ -237,6 +238,11 @@ export default function ReportBody() {
             <Figure label="Tokens issued" value={stats.tokens} />
             <Figure label="Played" value={stats.plays} note="took their spin" />
             <Figure label="Marketing opt-ins" value={stats.consented} />
+            <Figure
+              label="Verified addresses"
+              value={stats.verified}
+              note="proved by inbox or Google"
+            />
             <Figure
               label="Play-through"
               value={`${stats.tokens ? ((stats.plays / stats.tokens) * 100).toFixed(0) : 0}%`}

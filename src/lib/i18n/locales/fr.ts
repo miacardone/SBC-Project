@@ -197,6 +197,11 @@ export const fr: Dictionary = {
     checkEmail: "Consultez votre e-mail",
     boothLine: "Apportez votre code au {booth}",
     tokenIssued: "Jeton envoyé",
+    checkInbox: "Votre jeton est en route vers {hint}",
+    checkInboxHint: "Ouvrez-le sur ce téléphone, puis saisissez le code sur la machine.",
+    emailUndeliverable: "Cette adresse ne peut pas recevoir d'e-mails. Essayez-en une autre.",
+    emailBlocked: "Il nous faut une adresse que vous utilisez vraiment.",
+    emailNotSent: "Nous n'avons pas pu envoyer à cette adresse. Essayez-en une autre.",
     tokenOnPhone: "Votre jeton est sur votre téléphone",
   },
 

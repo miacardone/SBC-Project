@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkPin, unauthorized, usingDefaultPin } from "@/lib/admin";
+import { emailConfigured } from "@/lib/email";
 import { CONSOLATION, PRIZE_TIERS } from "@/lib/prizes";
 import { backend, listEntries, storageHealthy } from "@/lib/store";
 
@@ -39,7 +40,12 @@ export async function GET(request: Request) {
           title: "Storage problem",
           text: "Running on Vercel with file storage. Plays will not survive. Connect the Upstash integration, or set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
         }
-      : usingDefaultPin
+      : !emailConfigured
+        ? {
+            title: "Emails are not being verified",
+            text: "No sender is configured, so tokens are shown on screen instead of emailed and nobody has to prove their address. Set RESEND_API_KEY and redeploy — until then, treat this lead list as unverified.",
+          }
+        : usingDefaultPin
         ? {
             title: "Unprotected console",
             text: "This console is still on the default PIN. Set ADMIN_PIN before the doors open — the lead export is behind it.",
@@ -57,6 +63,7 @@ export async function GET(request: Request) {
     plays: entries.filter((e) => e.playedAt).length,
     leads: entries.filter((e) => e.email).length,
     secondChances: entries.filter((e) => e.usedSecondChance).length,
+    verified: entries.filter((e) => e.verifiedBy && e.verifiedBy !== "none").length,
     consented: entries.filter((e) => e.consent).length,
     redeemed: entries.filter((e) => e.redeemedAt).length,
     casino: entries.filter((e) => e.playedAt).length,

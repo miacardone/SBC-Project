@@ -23,6 +23,7 @@ type Stats = {
   plays: number;
   leads: number;
   secondChances: number;
+  verified: number;
   consented: number;
   redeemed: number;
   casino: number;
@@ -327,9 +328,10 @@ export default function Admin() {
       {/* numbers */}
       {stats && (
         <>
-          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
             <Stat label="Tokens" value={stats.tokens} accent />
             <Stat label="Played" value={stats.plays} />
+            <Stat label="Verified" value={stats.verified} />
             <Stat label="Opted in" value={stats.consented} />
             <Stat label="Redeemed" value={stats.redeemed} />
             <Stat label="Wins" value={stats.wins} />

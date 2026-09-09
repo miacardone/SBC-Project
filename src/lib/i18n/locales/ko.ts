@@ -198,6 +198,11 @@ export const ko: Dictionary = {
     checkEmail: "이메일을 확인하세요",
     boothLine: "코드를 가지고 {booth} 로 오세요",
     tokenIssued: "토큰을 보냈습니다",
+    checkInbox: "토큰을 {hint} 으로 보내는 중입니다",
+    checkInboxHint: "이 휴대폰에서 메일을 열고 코드를 기계에 입력하세요.",
+    emailUndeliverable: "해당 주소로는 메일을 받을 수 없습니다. 다른 주소를 사용하세요.",
+    emailBlocked: "실제로 사용하는 주소가 필요합니다.",
+    emailNotSent: "해당 주소로 보내지 못했습니다. 다른 주소를 사용하세요.",
     tokenOnPhone: "토큰이 휴대폰에 있습니다",
   },
 

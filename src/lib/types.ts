@@ -38,6 +38,8 @@ export type Entry = {
   /** when the email was captured and the token issued */
   createdAt: string;
   tokenEmailSent: boolean;
+  /** how we know the address is real: delivery, or a Google sign-in */
+  verifiedBy: "email" | "google" | "none";
 
   /* --- filled in once they actually play; null means they never did --- */
   playedAt: string | null;

@@ -198,6 +198,11 @@ export const ar: Dictionary = {
     checkEmail: "تحقق من بريدك الإلكتروني",
     boothLine: "أحضر رمزك إلى {booth}",
     tokenIssued: "تم إرسال الرمز",
+    checkInbox: "رمزك في طريقه إلى {hint}",
+    checkInboxHint: "افتح الرسالة على هذا الهاتف ثم اكتب الرمز في الآلة.",
+    emailUndeliverable: "هذا العنوان لا يستقبل البريد. جرّب عنوانًا آخر.",
+    emailBlocked: "نحتاج إلى عنوان تستخدمه فعلًا.",
+    emailNotSent: "تعذّر الإرسال إلى هذا العنوان. جرّب عنوانًا آخر.",
     tokenOnPhone: "رمزك على هاتفك",
   },
 

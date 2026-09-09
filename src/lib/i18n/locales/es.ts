@@ -403,6 +403,11 @@ export const es: Dictionary = {
     checkEmail: "Revisa tu correo",
     boothLine: "Lleva tu código al {booth}",
     tokenIssued: "Token enviado",
+    checkInbox: "Tu token va camino a {hint}",
+    checkInboxHint: "Ábrelo en este móvil y escribe el código en la máquina.",
+    emailUndeliverable: "Esa dirección no puede recibir correo. Prueba con otra.",
+    emailBlocked: "Necesitamos una dirección que uses de verdad.",
+    emailNotSent: "No hemos podido enviar a esa dirección. Prueba con otra.",
     tokenOnPhone: "Tu token está en tu móvil",
   },
 

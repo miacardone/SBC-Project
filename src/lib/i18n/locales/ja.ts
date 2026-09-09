@@ -198,6 +198,11 @@ export const ja: Dictionary = {
     checkEmail: "メールをご確認ください",
     boothLine: "コードを持って {booth} へ",
     tokenIssued: "トークンを送信しました",
+    checkInbox: "トークンを {hint} に送信中です",
+    checkInboxHint: "このスマホでメールを開き、コードを機械に入力してください。",
+    emailUndeliverable: "そのアドレスはメールを受信できません。別のものをお試しください。",
+    emailBlocked: "実際にお使いのアドレスが必要です。",
+    emailNotSent: "そのアドレスに送信できませんでした。別のものをお試しください。",
     tokenOnPhone: "トークンはスマホにあります",
   },
 

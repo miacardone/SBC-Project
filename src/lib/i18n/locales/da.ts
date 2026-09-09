@@ -198,6 +198,11 @@ export const da: Dictionary = {
     checkEmail: "Tjek din e-mail",
     boothLine: "Tag din kode med til {booth}",
     tokenIssued: "Token sendt",
+    checkInbox: "Din token er på vej til {hint}",
+    checkInboxHint: "Åbn den på denne telefon, og skriv koden ind i maskinen.",
+    emailUndeliverable: "Den adresse kan ikke modtage mail. Prøv en anden.",
+    emailBlocked: "Vi skal bruge en adresse, du faktisk bruger.",
+    emailNotSent: "Vi kunne ikke sende til den adresse. Prøv en anden.",
     tokenOnPhone: "Din token er på din telefon",
   },
 

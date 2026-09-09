@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { Dictionary } from "@/lib/i18n/locales/en";
 
+import { requestToken, TokenFailed, tokenMessage, type TokenResult } from "@/lib/client";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 type Props = { session: string; locale: string; t: Dictionary; booth: string };
@@ -12,32 +14,44 @@ export function JoinForm({ session, locale, t, booth }: Props) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [code, setCode] = useState<string | null>(null);
+  const [issued, setIssued] = useState<TokenResult | null>(null);
 
   const submit = async () => {
     if (!EMAIL_RE.test(email) || busy) return;
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, consent, session, locale }),
-      });
-      const data = (await res.json()) as { code?: string; error?: string };
-      if (!res.ok || !data.code) {
-        setError(data.error === "invalid-email" ? t.email.invalid : t.phone.problem);
-        return;
-      }
-      setCode(data.code);
-    } catch {
-      setError(t.phone.offline);
+      setIssued(await requestToken({ email, consent, session, locale }));
+    } catch (err) {
+      setError(
+        tokenMessage(err instanceof TokenFailed ? err.reason : "storage", t)
+      );
     } finally {
       setBusy(false);
     }
   };
 
-  if (code) {
+  if (issued) {
+    // Emailed: the inbox is the proof, so the code is deliberately not here.
+    if (issued.delivered) {
+      return (
+        <div className="flex flex-col gap-5 text-center">
+          <div className="rounded-2xl border-2 border-cb-red/60 bg-cb-red/10 px-5 py-7">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.35em] text-white/40">
+              {t.flow.tokenIssued}
+            </div>
+            <div className="mt-3 text-xl font-semibold leading-snug text-white">
+              {t.flow.checkInbox.replace("{hint}", issued.hint)}
+            </div>
+          </div>
+          <p className="text-base leading-relaxed text-white/65">{t.flow.checkInboxHint}</p>
+          <p className="text-sm leading-relaxed text-white/40">
+            {t.flow.boothLine.replace("{booth}", booth)}
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border-2 border-dashed border-cb-red bg-black/60 px-5 py-7 text-center">
@@ -45,7 +59,7 @@ export function JoinForm({ session, locale, t, booth }: Props) {
             {t.flow.tokenIssued}
           </div>
           <div className="mt-2 select-text font-[family-name:var(--font-display)] text-5xl tracking-[0.12em] text-white">
-            {code}
+            {issued.code}
           </div>
         </div>
         <p className="text-center text-base leading-relaxed text-white/70">

@@ -198,6 +198,11 @@ export const nl: Dictionary = {
     checkEmail: "Check je e-mail",
     boothLine: "Breng je code naar {booth}",
     tokenIssued: "Token verstuurd",
+    checkInbox: "Je token is onderweg naar {hint}",
+    checkInboxHint: "Open hem op deze telefoon en typ de code in de machine.",
+    emailUndeliverable: "Dat adres kan geen mail ontvangen. Probeer een ander.",
+    emailBlocked: "We hebben een adres nodig dat je echt gebruikt.",
+    emailNotSent: "We konden niet naar dat adres sturen. Probeer een ander.",
     tokenOnPhone: "Je token staat op je telefoon",
   },
 
