@@ -208,6 +208,7 @@ export const da: Dictionary = {
     continueAs: "Fortsæt som {email}",
     useAnotherEmail: "Brug en anden e-mail",
     orDivider: "eller",
+    workEmailOnly: "Brug din arbejdsmail — vi kan ikke tage imod private adresser.",
     tokenOnPhone: "Din token er på din telefon",
   },
 

@@ -208,6 +208,7 @@ export const ru: Dictionary = {
     continueAs: "Продолжить как {email}",
     useAnotherEmail: "Использовать другую почту",
     orDivider: "или",
+    workEmailOnly: "Укажите рабочую почту — личные адреса мы принять не можем.",
     tokenOnPhone: "Ваш токен на телефоне",
   },
 

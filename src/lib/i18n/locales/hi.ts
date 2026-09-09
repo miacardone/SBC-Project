@@ -208,6 +208,7 @@ export const hi: Dictionary = {
     continueAs: "{email} के रूप में जारी रखें",
     useAnotherEmail: "दूसरा ईमेल इस्तेमाल करें",
     orDivider: "या",
+    workEmailOnly: "कृपया अपना कार्यालय ईमेल दें — निजी पते स्वीकार नहीं किए जा सकते।",
     tokenOnPhone: "आपका टोकन आपके फ़ोन पर है",
   },
 

@@ -417,6 +417,7 @@ export const en = {
     continueAs: "Continue as {email}",
     useAnotherEmail: "Use a different email",
     orDivider: "or",
+    workEmailOnly: "Please use your work email — we can't accept personal addresses.",
     tokenOnPhone: "Your token is on your phone",
   },
 

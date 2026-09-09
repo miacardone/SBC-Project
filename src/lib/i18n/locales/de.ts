@@ -207,6 +207,7 @@ export const de: Dictionary = {
     continueAs: "Weiter als {email}",
     useAnotherEmail: "Andere E-Mail verwenden",
     orDivider: "oder",
+    workEmailOnly: "Bitte Ihre Arbeits-E-Mail — private Adressen können wir nicht annehmen.",
     tokenOnPhone: "Ihr Token ist auf Ihrem Handy",
   },
 

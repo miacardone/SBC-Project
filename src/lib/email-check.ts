@@ -1,4 +1,6 @@
 import { promises as dns } from "node:dns";
+import { envText } from "./env";
+import { isFreeEmailDomain } from "./free-domains";
 
 /**
  * Filtering, not proof.
@@ -33,9 +35,15 @@ const BLOCKED_LOCAL = new Set([
   "aaa", "abc", "xxx", "none", "noone", "nobody", "example", "foo", "bar",
 ]);
 
+/** Booths want business contacts; flip this off if consumer addresses count. */
+export const workEmailOnly = (envText("WORK_EMAIL_ONLY") ?? "true") !== "false";
+
 export type EmailVerdict =
   | { ok: true; email: string; domain: string }
-  | { ok: false; reason: "syntax" | "blocked-domain" | "no-mail-server" };
+  | {
+      ok: false;
+      reason: "syntax" | "blocked-domain" | "no-mail-server" | "personal-email";
+    };
 
 // Domains repeat constantly at a booth — the same company over and over — so
 // one lookup each is plenty.
@@ -72,6 +80,10 @@ export async function checkEmail(raw: string): Promise<EmailVerdict> {
 
   if (BLOCKED.has(domain)) return { ok: false, reason: "blocked-domain" };
   if (BLOCKED_LOCAL.has(local)) return { ok: false, reason: "blocked-domain" };
+
+  if (workEmailOnly && isFreeEmailDomain(domain)) {
+    return { ok: false, reason: "personal-email" };
+  }
 
   if (!(await hasMailServer(domain))) return { ok: false, reason: "no-mail-server" };
 

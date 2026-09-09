@@ -79,6 +79,7 @@ export type TokenReason =
   | "syntax"
   | "blocked-domain"
   | "no-mail-server"
+  | "personal-email"
   | "undeliverable"
   | "storage"
   | "network";
@@ -124,7 +125,12 @@ export function tokenMessage(
   reason: TokenReason,
   t: {
     email: { invalid: string };
-    flow: { emailUndeliverable: string; emailBlocked: string; emailNotSent: string };
+    flow: {
+      emailUndeliverable: string;
+      emailBlocked: string;
+      emailNotSent: string;
+      workEmailOnly: string;
+    };
     phone: { offline: string; problem: string };
   }
 ): string {
@@ -135,6 +141,8 @@ export function tokenMessage(
       return t.flow.emailBlocked;
     case "no-mail-server":
       return t.flow.emailUndeliverable;
+    case "personal-email":
+      return t.flow.workEmailOnly;
     case "undeliverable":
       return t.flow.emailNotSent;
     case "network":

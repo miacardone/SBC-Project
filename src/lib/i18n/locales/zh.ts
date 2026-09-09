@@ -208,6 +208,7 @@ export const zh: Dictionary = {
     continueAs: "以 {email} 继续",
     useAnotherEmail: "使用其他邮箱",
     orDivider: "或",
+    workEmailOnly: "请使用您的工作邮箱——我们无法接受个人邮箱。",
     tokenOnPhone: "你的代币在手机上",
   },
 

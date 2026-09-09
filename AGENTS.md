@@ -37,6 +37,11 @@ and storage both talk to REST APIs with `fetch`.
 - **Outcomes are decided server-side before any animation runs.** `/api/play`
   picks the result and the prize tier, then builds the reel grid to match. Never
   let the client decide whether someone won.
+- **Work addresses only, by default.** `src/lib/free-domains.ts` is the consumer
+  provider list and `WORK_EMAIL_ONLY` gates it. It applies to the Google lane
+  too — signing in with a personal Gmail is caught on the confirm screen and
+  refused by the server. Only ever add genuine consumer providers to that list;
+  a wrong entry silently deletes a lead.
 - **An address is only real if something proved it.** Google sign-in via Clerk
   proves it outright; a typed address is proved by delivering the token to it
   and nothing else. `src/lib/email-check.ts` is a filter in front of both, not

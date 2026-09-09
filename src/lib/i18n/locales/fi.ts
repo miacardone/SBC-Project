@@ -208,6 +208,7 @@ export const fi: Dictionary = {
     continueAs: "Jatka tunnuksella {email}",
     useAnotherEmail: "Käytä toista sähköpostia",
     orDivider: "tai",
+    workEmailOnly: "Käytä työsähköpostiasi — emme voi ottaa vastaan henkilökohtaisia osoitteita.",
     tokenOnPhone: "Tunnuksesi on puhelimessasi",
   },
 

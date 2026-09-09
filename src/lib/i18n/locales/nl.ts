@@ -208,6 +208,7 @@ export const nl: Dictionary = {
     continueAs: "Doorgaan als {email}",
     useAnotherEmail: "Ander e-mailadres gebruiken",
     orDivider: "of",
+    workEmailOnly: "Gebruik je werk-e-mail — persoonlijke adressen kunnen we niet accepteren.",
     tokenOnPhone: "Je token staat op je telefoon",
   },
 

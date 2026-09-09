@@ -208,6 +208,7 @@ export const ko: Dictionary = {
     continueAs: "{email} 으로 계속",
     useAnotherEmail: "다른 이메일 사용",
     orDivider: "또는",
+    workEmailOnly: "회사 이메일을 사용해 주세요. 개인 주소는 받을 수 없습니다.",
     tokenOnPhone: "토큰이 휴대폰에 있습니다",
   },
 

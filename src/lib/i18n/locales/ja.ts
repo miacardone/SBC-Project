@@ -208,6 +208,7 @@ export const ja: Dictionary = {
     continueAs: "{email} で続行",
     useAnotherEmail: "別のメールを使う",
     orDivider: "または",
+    workEmailOnly: "お勤め先のメールをご利用ください。個人アドレスはお受けできません。",
     tokenOnPhone: "トークンはスマホにあります",
   },
 

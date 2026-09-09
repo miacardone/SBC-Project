@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SignIn, useUser } from "@clerk/nextjs";
 import { ConsentBox } from "./TokenIssued";
 import { requestToken, TokenFailed, tokenMessage, type TokenResult } from "@/lib/client";
+import { isFreeEmailDomain } from "@/lib/free-domains";
 import type { Dictionary } from "@/lib/i18n/locales/en";
 
 /**
@@ -30,6 +31,11 @@ export function GoogleJoin({
   const [error, setError] = useState<string | null>(null);
 
   const googleEmail = user?.primaryEmailAddress?.emailAddress ?? null;
+  // Signing in with a personal Gmail is the obvious failure mode here, so say
+  // so on the confirm screen rather than after they commit.
+  const personal = googleEmail
+    ? isFreeEmailDomain(googleEmail.slice(googleEmail.lastIndexOf("@") + 1))
+    : false;
 
   const claim = async () => {
     if (busy) return;
@@ -57,13 +63,19 @@ export function GoogleJoin({
           </div>
         </div>
 
-        <ConsentBox consent={consent} setConsent={setConsent} t={t} />
+        {personal ? (
+          <p className="rounded-xl border-2 border-cb-red/60 bg-cb-red/10 px-4 py-3 text-sm font-semibold leading-snug text-cb-red-hot">
+            {t.flow.workEmailOnly}
+          </p>
+        ) : (
+          <ConsentBox consent={consent} setConsent={setConsent} t={t} />
+        )}
         {error && <p className="text-sm font-semibold text-cb-red-hot">{error}</p>}
 
         <button
           type="button"
           onClick={claim}
-          disabled={busy}
+          disabled={busy || personal}
           className="rounded-xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep py-4 font-[family-name:var(--font-display)] text-2xl uppercase tracking-wide text-white transition active:scale-[0.98] disabled:opacity-35"
         >
           {busy ? t.flow.sending : t.flow.getToken}

@@ -413,6 +413,7 @@ export const es: Dictionary = {
     continueAs: "Continuar como {email}",
     useAnotherEmail: "Usar otro correo",
     orDivider: "o",
+    workEmailOnly: "Usa tu correo de trabajo — no podemos aceptar direcciones personales.",
     tokenOnPhone: "Tu token está en tu móvil",
   },
 

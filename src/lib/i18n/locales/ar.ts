@@ -208,6 +208,7 @@ export const ar: Dictionary = {
     continueAs: "المتابعة باسم {email}",
     useAnotherEmail: "استخدام بريد آخر",
     orDivider: "أو",
+    workEmailOnly: "يرجى استخدام بريد العمل — لا يمكننا قبول العناوين الشخصية.",
     tokenOnPhone: "رمزك على هاتفك",
   },
 

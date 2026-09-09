@@ -208,6 +208,7 @@ export const tr: Dictionary = {
     continueAs: "{email} olarak devam et",
     useAnotherEmail: "Başka bir e-posta kullan",
     orDivider: "veya",
+    workEmailOnly: "Lütfen iş e-postanızı kullanın — kişisel adresleri kabul edemiyoruz.",
     tokenOnPhone: "Jetonunuz telefonunuzda",
   },
 
