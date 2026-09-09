@@ -40,7 +40,13 @@ export default async function JoinPage({
           <p className="mt-2 text-sm text-white/50">{dictionary.flow.captureSubtitle}</p>
         </div>
 
-        <JoinForm session={session} locale={locale} t={dictionary} booth={BOOTH} />
+        <JoinForm
+          session={session}
+          locale={locale}
+          t={dictionary}
+          booth={BOOTH}
+          googleAvailable={Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)}
+        />
       </div>
     </div>
   );

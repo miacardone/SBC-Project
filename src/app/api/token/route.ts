@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { makeId, makeToken } from "@/lib/code";
 import { checkEmail, maskEmail } from "@/lib/email-check";
 import { emailConfigured, sendTokenEmail } from "@/lib/email";
-import { getEntryBySession, saveEntry } from "@/lib/store";
+import { getEntryBySession, saveEntry, updateEntry } from "@/lib/store";
 import type { Entry } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -104,8 +104,10 @@ export async function POST(request: Request) {
       console.error("[token] FAILED TO PERSIST — check storage:", err);
       return NextResponse.json({ error: "storage" }, { status: 503 });
     }
+    // Google proves who they are; the copy email proves our mail reaches them.
+    // Record the second one too, so the lead list shows deliverability.
     sendTokenEmail(entry)
-      .then((sent) => (sent ? undefined : console.warn("[token] copy email failed")))
+      .then((sent) => (sent ? updateEntry(entry.code, { tokenEmailSent: true }) : null))
       .catch((err: unknown) => console.error("[token] copy email failed:", err));
     return NextResponse.json({ code: entry.code, verified: true });
   }
