@@ -19,8 +19,10 @@ type Stats = {
   backend: string;
   healthy: boolean;
   warning: { title: string; text: string } | null;
+  tokens: number;
   plays: number;
   leads: number;
+  secondChances: number;
   consented: number;
   redeemed: number;
   casino: number;
@@ -325,15 +327,15 @@ export default function Admin() {
       {/* numbers */}
       {stats && (
         <>
-          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
-            <Stat label="Plays" value={stats.plays} />
-            <Stat label="Emails" value={stats.leads} accent />
+          <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+            <Stat label="Tokens" value={stats.tokens} accent />
+            <Stat label="Played" value={stats.plays} />
             <Stat label="Opted in" value={stats.consented} />
             <Stat label="Redeemed" value={stats.redeemed} />
             <Stat label="Wins" value={stats.wins} />
-            <Stat label="Casino" value={stats.casino} />
-            <Stat label="Classroom" value={stats.classroom} />
-            <Stat label="Catch" value={stats.catch} />
+            <Stat label="Spins" value={stats.casino} />
+            <Stat label="2nd chances" value={stats.secondChances} />
+            
           </section>
 
           <section className="mb-8">

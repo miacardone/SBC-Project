@@ -5,7 +5,7 @@ export const es: Dictionary = {
 
   attract: {
     tapToPlay: "Toca para jugar",
-    subtitleA: "Gira los rodillos, haz el test o atrapa el fraude.",
+    subtitleA: "Danos un correo, coge un token y gira.",
     subtitleB: "Todos los jugadores se llevan un premio.",
     ticker: [
       "todos ganan algo",
@@ -370,6 +370,40 @@ export const es: Dictionary = {
     "Harbor Diner": "Recogida local · DNI registrado",
     "Vista Optics": "Envío en dos días al domicilio",
     "Studio Paints": "Cesta media de esta tienda",
+  },
+
+  flow: {
+    captureTitle: "Introduce tu correo",
+    captureAccent: "para un token",
+    captureSubtitle: "Necesitas un token para girar. Llega a tu móvil en cuanto pulses.",
+    scanTitle: "Escanea para conseguir tu token",
+    scanSteps: [
+      "Apunta la cámara al código",
+      "Pulsa compartir y aparece tu token",
+      "Escríbelo en esta máquina para girar",
+    ],
+    orType: "¿Sin móvil? Escribe tu correo aquí",
+    backToQr: "Volver al código",
+    getToken: "Conseguir mi token",
+    sending: "Enviando…",
+    tokenTitle: "Introduce tu",
+    tokenAccent: "token",
+    tokenSubtitle: "Está en tu móvil y en tu correo. Seis caracteres.",
+    tokenPlaceholder: "ABC-DEF",
+    unlock: "Desbloquear el giro",
+    checking: "Comprobando…",
+    tokenUnknown: "No reconocemos ese token. Compruébalo e inténtalo de nuevo.",
+    tokenUsed: "Ese token ya se ha jugado.",
+    startOver: "Empezar de nuevo",
+    secondChanceTitle: "Segunda oportunidad",
+    secondChanceAccent: "siguiente nivel",
+    secondChanceBody: "La rueda no ha pagado — casi nadie la vence. Responde a las preguntas y aún puedes ganar algo de verdad.",
+    takeSecondChance: "Aceptar la segunda oportunidad",
+    declineSecondChance: "No, gracias",
+    checkEmail: "Revisa tu correo",
+    boothLine: "Lleva tu código al {booth}",
+    tokenIssued: "Token enviado",
+    tokenOnPhone: "Tu token está en tu móvil",
   },
 
   phone: {

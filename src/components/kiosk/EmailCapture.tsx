@@ -8,14 +8,12 @@ import { Keyboard } from "./Keyboard";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 type Props = {
-  prizeLine: string;
   busy: boolean;
   error: string | null;
   onSubmit: (email: string, consent: boolean) => void;
-  onSkip: () => void;
 };
 
-export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props) {
+export function EmailCapture({ busy, error, onSubmit }: Props) {
   const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
@@ -30,10 +28,10 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
 
         <div className="text-center">
           <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
-            {t.email.title} <span className="text-cb-red">{t.email.titleAccent}</span>
+            {t.flow.captureTitle} <span className="text-cb-red">{t.flow.captureAccent}</span>
           </h1>
           <p className="mt-[1vmin] text-[2.1vmin] font-medium text-white/55">
-            {prizeLine}
+            {t.flow.captureSubtitle}
           </p>
         </div>
 
@@ -59,7 +57,7 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
           onClear={() => setEmail("")}
           onSubmit={() => valid && !busy && onSubmit(email, consent)}
           canSubmit={valid && !busy}
-          submitLabel={busy ? t.email.sending : t.email.getMyCode}
+          submitLabel={busy ? t.flow.sending : t.flow.getToken}
           clearLabel={t.email.clear}
         />
 
@@ -82,15 +80,6 @@ export function EmailCapture({ prizeLine, busy, error, onSubmit, onSkip }: Props
             <span className="text-[1.8vmin] leading-snug text-white/55">
               {t.email.consent}
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onSkip}
-            disabled={busy}
-            className="shrink-0 text-[1.8vmin] font-semibold uppercase tracking-[0.24em] text-white/35 underline underline-offset-4 transition active:scale-95 disabled:opacity-40"
-          >
-            {t.email.skip}
           </button>
         </div>
       </div>

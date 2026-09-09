@@ -1,83 +1,35 @@
 # cb911 Arcade
 
-A touchscreen booth game for Chargebacks911. Players walk up to the screen, pick
-one of three games, play a round, and every single one of them wins a prize. They
-drop in an email, get a claim code on screen and in their inbox, and carry the
-code to the booth to choose their prize.
+A touchscreen booth game for Chargebacks911. The email comes first: a player
+hands one over, gets a six-character token on their phone, types it into the
+machine to unlock a spin — and then almost certainly loses, because the wheel
+pays 100 times in 10,000. Losing is the point. It opens the second chance,
+where answering chargeback questions is how prizes are actually won.
 
-The booth gets engagement and a clean, consented lead list. The player gets a
-plush bull.
+Everyone still walks away with something, and every winner is told to check
+their email and bring their code to the booth.
 
 ```
-attract  →  pick a game  →  play  →  results  →  prize reveal  →  email  →  code
-   ↑                                                                        │
-   └───────────────────── auto-reset for the next person ───────────────────┘
+attract → email (QR to phone, or the on-screen keyboard)
+        → token issued → type it in
+        → spin  ─ 1% ─→ win
+                └─ 99% ─→ second chance → question → win or consolation
+        → prize code + booth
 ```
 
-## The three games
+The booth gets a verified email from every single person who plays, and the
+people who want a prize badly enough have to read about chargebacks to get one.
 
-**Casino** — a five-reel cb911 slot machine. Three bulls on the payline pays.
-The result is decided server-side *before* the reels animate, so prize odds and
-inventory stay under your control instead of the animation's.
+## The odds, and why
 
-**Classroom** — the Chargeback Challenge: five questions pulled at random from a
-14-question bank, 15 seconds each, with the real answer and a one-line
-explanation after every one. Four right wins a prize; a perfect five is the only
-way into the jackpot pool. At the end they get a full score card with every
-question, what they answered, and what the right answer was.
+`WHEEL_WIN_RATE` is `0.01`. At 500 players that is about five wheel winners.
+The second chance is where the volume is: four correct out of five wins a real
+tier, so the funnel deliberately pushes almost everybody into the educational
+content. Turn the wheel up and you buy fewer conversations; turn it down and
+people stop believing it can pay at all.
 
-**Catch** — Catch the Fraud. Orders pop onto the board one detail at a time
-("AVS mismatch · CVV fail", "Verified by 3-D Secure") and each one sits there
-for a full five seconds. Tap the fraudulent ones before they clear and leave the
-good customers alone — tapping a legit order is a false decline and counts
-against you. Catch 7 of 10 to win, all 10 for the jackpot. A round runs about
-half a minute. It's the loudest of the three and the one that pulls a crowd.
-
-The scoreboard afterwards is the sales pitch: revenue protected, what got
-through and what it really costs once fees and shipping land, how many good
-customers they turned away and what those orders were worth, and a net position
-at the bottom. Most people leave that screen having just watched themselves lose
-money to false declines, which is the whole point.
-
-Losing at any game still awards the consolation tier. Nobody walks away empty
-handed — that's the point.
-
-## Languages
-
-Eighteen: English, Spanish, Portuguese, French, German, Italian, Dutch,
-Norwegian, Danish, Finnish, Polish, Russian, Turkish, Mandarin, Japanese,
-Korean, Arabic and Hindi. A globe button on the attract and game-select screens
-opens a grid where each language is written in its own script, which is how
-somebody finds theirs without reading a word of English.
-
-Everything translates, not just the buttons — the quiz questions, their four
-options and the explanation after each one, the fraud tells on the Catch cards,
-the prize tiers and the prize names. Arabic lays the whole kiosk out
-right-to-left. Scripts the display face has no glyphs for (Cyrillic, CJK,
-Arabic, Devanagari) fall back to a heavy system stack instead of rendering as
-empty boxes.
-
-The language follows the player onto their phone: the QR carries it, and the
-claim page renders server-side in the same language.
-
-**These translations have not been reviewed by native speakers.** They are
-careful, and the chargeback terminology is handled deliberately, but this is
-customer-facing copy for your brand in front of an international audience. Get
-at least the marketing consent line reviewed before the doors open — that one
-has legal weight in several of these markets.
-
-Adding a language means adding a file to `src/lib/i18n/locales/` and a row to
-`LOCALES`. TypeScript will refuse to compile a locale that's missing a key, and
-`npm run check:locales` (which runs automatically before every build) fails if
-any language is still shipping English.
-
-## Prizes are chosen, not assigned
-
-A player wins a *tier*, not a specific object. The code screen and the email
-both list what that tier is worth, and they pick which one they actually want
-when they hand the code over at the booth. Booth staff tap the item on the
-console and it's recorded against the code. That way one item running out early
-doesn't strand anyone holding a promise the booth can't keep.
+Losing the spin awards the consolation tier straight away, so somebody who
+wanders off mid-question still holds something the booth can honour.
 
 ## Run it
 

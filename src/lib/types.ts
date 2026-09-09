@@ -27,27 +27,35 @@ export type PlayDetail =
 
 export type Entry = {
   id: string;
+  /** The token. Issued at email capture, typed in to unlock the spin, and the
+   *  same code they show at the booth if they win — one code per person. */
   code: string;
   email: string;
-  mode: GameMode;
-  result: PlayResult;
-  /** game score, null for slots */
-  score: number | null;
-  /** out of how many, null for slots */
-  scoreOutOf: number | null;
-  /** BCP-47 code of the language they played in */
+  consent: boolean;
   locale: string;
-  /** per-question / per-card breakdown, null for older rows */
+  /** the phone session that issued this token, when it came from a QR scan */
+  session: string | null;
+  /** when the email was captured and the token issued */
+  createdAt: string;
+  tokenEmailSent: boolean;
+
+  /* --- filled in once they actually play; null means they never did --- */
+  playedAt: string | null;
+  mode: GameMode | null;
+  result: PlayResult | null;
+  score: number | null;
+  scoreOutOf: number | null;
   detail: PlayDetail | null;
-  tierId: string;
-  tierLabel: string;
-  /** snapshot of what this player may pick from, in case the table changes */
+  /** true when the wheel lost and they took the question instead */
+  usedSecondChance: boolean;
+
+  /* --- the prize, once there is one --- */
+  tierId: string | null;
+  tierLabel: string | null;
   tierOptions: string[];
   /** which one the booth actually handed over */
   chosenPrize: string | null;
-  consent: boolean;
   emailSent: boolean;
-  createdAt: string;
   redeemedAt: string | null;
 };
 

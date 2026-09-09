@@ -12,7 +12,7 @@ export const en = {
 
   attract: {
     tapToPlay: "Tap to play",
-    subtitleA: "Spin the slots, take the quiz, or catch the fraud.",
+    subtitleA: "Hand over an email, grab a token, take your spin.",
     subtitleB: "Every single player walks away with a prize.",
     ticker: [
       "everyone wins something",
@@ -369,6 +369,45 @@ export const en = {
     "Harbor Diner": "Local pickup · ID on file",
     "Vista Optics": "Two-day ship to home address",
     "Studio Paints": "Average basket for this store",
+  },
+
+  /** The token-first flow: email, token, spin, second chance. */
+  flow: {
+    captureTitle: "Enter your email",
+    captureAccent: "for a token",
+    captureSubtitle: "You need a token to spin. It lands on your phone the moment you tap.",
+    scanTitle: "Scan to get your token",
+    scanSteps: [
+      "Point your camera at the code",
+      "Tap share and your token appears",
+      "Type it into this machine to spin",
+    ],
+    orType: "No phone? Type your email here",
+    backToQr: "Back to the code",
+    getToken: "Get my token",
+    sending: "Sending…",
+
+    tokenTitle: "Enter your",
+    tokenAccent: "token",
+    tokenSubtitle: "It's on your phone and in your inbox. Six characters.",
+    tokenPlaceholder: "ABC-DEF",
+    unlock: "Unlock the spin",
+    checking: "Checking…",
+    tokenUnknown: "We don't recognise that token. Check it and try again.",
+    tokenUsed: "That token has already been played.",
+    startOver: "Start over",
+
+    secondChanceTitle: "Second chance",
+    secondChanceAccent: "next level",
+    secondChanceBody:
+      "The wheel didn't pay — almost nobody beats it. Answer the questions and you can still win something real.",
+    takeSecondChance: "Take the second chance",
+    declineSecondChance: "No thanks, I'm done",
+
+    checkEmail: "Check your email",
+    boothLine: "Bring your code to {booth}",
+    tokenIssued: "Token sent",
+    tokenOnPhone: "Your token is on your phone",
   },
 
   phone: {

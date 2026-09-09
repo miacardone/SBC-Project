@@ -3,58 +3,49 @@
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { Backdrop, CornerControls, Logo, PillButton } from "./Chrome";
-import { useI18n } from "@/lib/i18n";
 import { EmailCapture } from "./EmailCapture";
-import type { ClaimResponse, OutcomeResponse } from "@/lib/client";
+import { LanguagePicker } from "./LanguagePicker";
+import { useI18n } from "@/lib/i18n";
 
 type Props = {
-  outcome: OutcomeResponse;
-  prizeLine: string;
+  /** the kiosk's handoff id, encoded in the QR */
+  session: string;
   busy: boolean;
   error: string | null;
   onSubmit: (email: string, consent: boolean) => void;
-  onSkip: () => void;
-  /** fired when the player finished on their own phone */
-  onClaimed: (claim: ClaimResponse) => void;
+  /** fired when a phone claimed this session and took a token */
+  onIssuedElsewhere: () => void;
   onHome: () => void;
 };
 
 /**
- * Two ways to claim: scan the QR and finish on your own phone (where autofill
- * works and the score is waiting), or tap it out on the booth keyboard. The
- * screen polls while the QR is up so it moves on by itself once the phone is
- * done.
+ * Two ways to hand over an email: scan the code and do it on your own phone,
+ * where the token then lives, or tap it out here. The screen polls while the
+ * QR is up so it moves on by itself once a phone has taken a token.
  */
-export function ClaimScreen({
-  outcome,
-  prizeLine,
+export function CaptureScreen({
+  session,
   busy,
   error,
   onSubmit,
-  onSkip,
-  onClaimed,
+  onIssuedElsewhere,
   onHome,
 }: Props) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [mode, setMode] = useState<"qr" | "keyboard">("qr");
   const [svg, setSvg] = useState<string | null>(null);
 
   // NEXT_PUBLIC_KIOSK_URL is what phones actually resolve. Falling back to the
   // page's own origin only works when the kiosk is served on something a phone
-  // can reach — never plain localhost. This screen only ever mounts after a
-  // game, so `window` is always there by the time it runs.
+  // can reach — never plain localhost.
   const [origin] = useState(() =>
     process.env.NEXT_PUBLIC_KIOSK_URL ||
     (typeof window === "undefined" ? "" : window.location.origin)
   );
 
-  // The phone page opens in whatever language they picked at the kiosk.
   const url = useMemo(
-    () =>
-      origin
-        ? `${origin.replace(/\/$/, "")}/claim/${outcome.id}${locale === "en" ? "" : `?lang=${locale}`}`
-        : null,
-    [origin, outcome.id, locale]
+    () => (origin ? `${origin.replace(/\/$/, "")}/join/${session}` : null),
+    [origin, session]
   );
 
   useEffect(() => {
@@ -66,66 +57,45 @@ export function ClaimScreen({
       errorCorrectionLevel: "M",
       color: { dark: "#0a0a0c", light: "#ffffff" },
     })
-      .then((out) => {
-        if (!cancelled) setSvg(out);
-      })
-      .catch(() => {
-        if (!cancelled) setSvg(null);
-      });
+      .then((out) => !cancelled && setSvg(out))
+      .catch(() => !cancelled && setSvg(null));
     return () => {
       cancelled = true;
     };
   }, [url]);
 
-  // Watch for the phone finishing the claim. Every read here costs a command
-  // against the storage plan, so it is deliberately unhurried and gives up
-  // before the idle reset would fire anyway.
+  // Watch for a phone taking the token for this session.
   useEffect(() => {
     let cancelled = false;
-    const started = Date.now();
     const id = setInterval(async () => {
-      if (Date.now() - started > 240_000) {
-        clearInterval(id);
-        return;
-      }
       try {
-        const res = await fetch(`/api/claim/status?id=${encodeURIComponent(outcome.id)}`, {
+        const res = await fetch(`/api/token/status?session=${encodeURIComponent(session)}`, {
           cache: "no-store",
         });
         if (!res.ok) return;
-        const data = (await res.json()) as ClaimResponse & { claimed: boolean };
-        if (!cancelled && data.claimed) {
+        const data = (await res.json()) as { issued: boolean };
+        if (!cancelled && data.issued) {
           clearInterval(id);
-          onClaimed({
-            code: data.code,
-            options: data.options,
-            emailSent: data.emailSent,
-          });
+          onIssuedElsewhere();
         }
       } catch {
-        // venue wifi hiccup — the next tick can try again
+        // venue wifi hiccup — the next tick tries again
       }
-    }, 3000);
+    }, 2000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [outcome.id, onClaimed]);
+  }, [session, onIssuedElsewhere]);
 
   if (mode === "keyboard") {
     return (
       <div className="relative h-full w-full">
         <CornerControls>
           <PillButton onClick={onHome}>{t.common.home}</PillButton>
-          <PillButton onClick={() => setMode("qr")}>{t.claim.backToQr}</PillButton>
+          <PillButton onClick={() => setMode("qr")}>{t.flow.backToQr}</PillButton>
         </CornerControls>
-        <EmailCapture
-          prizeLine={prizeLine}
-          busy={busy}
-          error={error}
-          onSubmit={onSubmit}
-          onSkip={onSkip}
-        />
+        <EmailCapture busy={busy} error={error} onSubmit={onSubmit} />
       </div>
     );
   }
@@ -136,21 +106,23 @@ export function ClaimScreen({
       <CornerControls>
         <PillButton onClick={onHome}>{t.common.home}</PillButton>
       </CornerControls>
+      <div className="absolute right-[3vmin] top-[3vmin] z-30">
+        <LanguagePicker />
+      </div>
 
       <div className="relative z-10 flex w-full max-w-[150vmin] flex-col items-center gap-[3vmin]">
         <Logo className="text-[5.5vmin]" />
 
         <div className="text-center">
           <h1 className="font-[family-name:var(--font-display)] text-[6vmin] uppercase leading-none text-white">
-            {t.claim.title} <span className="text-cb-red">{t.claim.titleAccent}</span>
+            {t.flow.scanTitle}
           </h1>
           <p className="mt-[1vmin] text-[2.1vmin] font-medium text-white/55">
-            {t.claim.subtitle}
+            {t.flow.captureSubtitle}
           </p>
         </div>
 
         <div className="flex w-full flex-col items-center gap-[3vmin] landscape:flex-row landscape:items-stretch landscape:justify-center">
-          {/* the code itself */}
           <div className="flex flex-col items-center gap-[1.6vmin]">
             <div className="rounded-[2.4vmin] bg-white p-[2vmin] shadow-[0_0_8vmin_-2vmin_rgb(255_255_255_/_0.5)]">
               {svg ? (
@@ -160,7 +132,7 @@ export function ClaimScreen({
                 />
               ) : (
                 <div className="flex h-[38vmin] w-[38vmin] items-center justify-center text-center text-[1.8vmin] font-semibold text-black/40">
-                  Generating…
+                  …
                 </div>
               )}
             </div>
@@ -171,10 +143,9 @@ export function ClaimScreen({
             )}
           </div>
 
-          {/* what happens next */}
           <div className="flex max-w-[60vmin] flex-col justify-center gap-[2.4vmin]">
             <ol className="flex flex-col gap-[1.8vmin]">
-              {t.claim.steps.map((step, i) => (
+              {t.flow.scanSteps.map((step, i) => (
                 <li key={step} className="flex items-center gap-[2vmin]">
                   <span className="flex h-[5vmin] w-[5vmin] shrink-0 items-center justify-center rounded-full border-2 border-cb-red/60 bg-cb-red/10 font-[family-name:var(--font-display)] text-[2.4vmin] leading-none text-white">
                     {i + 1}
@@ -193,7 +164,7 @@ export function ClaimScreen({
               onClick={() => setMode("keyboard")}
               className="rounded-2xl border-2 border-edge bg-gradient-to-b from-panel to-pit px-[3vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[2.8vmin] uppercase leading-none tracking-wide text-white/80 transition active:scale-[0.98]"
             >
-              {t.claim.noPhone}
+              {t.flow.orType}
             </button>
           </div>
         </div>

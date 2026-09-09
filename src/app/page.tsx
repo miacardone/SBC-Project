@@ -1,33 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SymbolDefs } from "@/components/Symbols";
 import { AttractScreen } from "@/components/kiosk/AttractScreen";
-import { CatchGame } from "@/components/kiosk/CatchGame";
-import { CatchResults } from "@/components/kiosk/CatchResults";
+import { CaptureScreen } from "@/components/kiosk/CaptureScreen";
+import { Backdrop, CornerControls, Logo, PillButton } from "@/components/kiosk/Chrome";
 import { CodeCard } from "@/components/kiosk/CodeCard";
-import { ClaimScreen } from "@/components/kiosk/ClaimScreen";
-import { ModeSelect } from "@/components/kiosk/ModeSelect";
 import { PrizeReveal } from "@/components/kiosk/PrizeReveal";
 import { Quiz, type AnswerLog } from "@/components/kiosk/Quiz";
 import { QuizResults } from "@/components/kiosk/QuizResults";
+import { SecondChance } from "@/components/kiosk/SecondChance";
 import { SlotMachine } from "@/components/kiosk/SlotMachine";
-import { Backdrop, CornerControls, Logo, PillButton } from "@/components/kiosk/Chrome";
-import { fill, tierText, useI18n } from "@/lib/i18n";
-import { requestClaim, requestOutcome, type ClaimResponse, type OutcomeResponse } from "@/lib/client";
-import { CATCH_TOTAL, type CatchResult } from "@/lib/catch";
-import type { GameMode, PlayDetail } from "@/lib/types";
+import { TokenScreen } from "@/components/kiosk/TokenScreen";
+import { makeSessionId, normalizeCode } from "@/lib/code";
+import { play, PlayFailed, requestToken, type PlayResponse } from "@/lib/client";
+import { useI18n } from "@/lib/i18n";
 
 type Stage =
   | "attract"
-  | "choose"
-  | "casino"
-  | "classroom"
-  | "catch"
+  | "capture"
+  | "token"
+  | "wheel"
+  | "secondChanceOffer"
+  | "quiz"
   | "review"
   | "grading"
   | "reveal"
-  | "email"
   | "code"
   | "trouble";
 
@@ -35,36 +33,32 @@ type Stage =
 const IDLE_MS = 90_000;
 
 /**
- * The claim screen gets far longer, because a player who scans the QR finishes
- * on their phone and never touches the booth screen again — the idle timer
- * would otherwise reset the kiosk out from under them mid-typing.
+ * The capture and token screens wait on a phone — scanning a code, reading an
+ * inbox — and nobody is touching the kiosk while that happens. A 90-second
+ * timer would reset the machine out from under them.
  */
-const IDLE_MS_CLAIMING = 300_000;
+const IDLE_MS_WAITING = 300_000;
 
 export default function Kiosk() {
   const { t, locale } = useI18n();
+
   const [stage, setStage] = useState<Stage>("attract");
-  const [mode, setMode] = useState<GameMode>("casino");
-  const [score, setScore] = useState<number | null>(null);
+  const [session, setSession] = useState(() => makeSessionId());
+  const [token, setToken] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<PlayResponse | null>(null);
   const [quizLog, setQuizLog] = useState<AnswerLog[]>([]);
-  const [catchResult, setCatchResult] = useState<CatchResult | null>(null);
-  const [outcome, setOutcome] = useState<OutcomeResponse | null>(null);
-  const [claim, setClaim] = useState<ClaimResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // The prize request is fired the moment a skill game ends, so it resolves
-  // while the player is still reading their results.
-  const pending = useRef<Promise<OutcomeResponse> | null>(null);
+  const pending = useRef<Promise<PlayResponse> | null>(null);
 
   const reset = useCallback(() => {
     pending.current = null;
+    setSession(makeSessionId());
     setStage("attract");
-    setScore(null);
-    setQuizLog([]);
-    setCatchResult(null);
+    setToken(null);
     setOutcome(null);
-    setClaim(null);
+    setQuizLog([]);
     setBusy(false);
     setError(null);
   }, []);
@@ -73,12 +67,13 @@ export default function Kiosk() {
 
   useEffect(() => {
     if (stage === "attract") return;
+    const waiting = stage === "capture" || stage === "token";
+    const window_ = waiting ? IDLE_MS_WAITING : IDLE_MS;
 
-    const idleWindow = stage === "email" ? IDLE_MS_CLAIMING : IDLE_MS;
-    let timer = setTimeout(reset, idleWindow);
+    let timer = setTimeout(reset, window_);
     const arm = () => {
       clearTimeout(timer);
-      timer = setTimeout(reset, idleWindow);
+      timer = setTimeout(reset, window_);
     };
     window.addEventListener("pointerdown", arm);
     window.addEventListener("keydown", arm);
@@ -97,74 +92,104 @@ export default function Kiosk() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => {});
     }
-    setStage("choose");
+    setStage("capture");
   }, []);
 
-  const pickMode = useCallback((picked: GameMode) => {
-    setMode(picked);
-    setError(null);
-    setStage(picked);
-  }, []);
-
-  /** Kick off the prize request without blocking the screen. */
-  const prefetchPrize = useCallback(
-    (forMode: GameMode, forScore: number, detail?: PlayDetail) => {
-      const request = requestOutcome(forMode, forScore, locale, detail);
-      request.catch(() => {}); // handled below; this just avoids an unhandled rejection
-      request.then(setOutcome, () => {});
-      pending.current = request;
+  /** Email typed on the kiosk itself. */
+  const submitEmail = useCallback(
+    async (email: string, consent: boolean) => {
+      setBusy(true);
+      setError(null);
+      try {
+        await requestToken({ email, consent, locale, session });
+        setStage("token");
+      } catch {
+        setError(t.phone.offline);
+      } finally {
+        setBusy(false);
+      }
     },
-    [locale]
+    [locale, session, t.phone.offline]
   );
 
-  const slotsFinished = useCallback((result: OutcomeResponse) => {
+  /** Enter the token to unlock the spin. */
+  const submitToken = useCallback(
+    async (raw: string) => {
+      setBusy(true);
+      setError(null);
+      const code = normalizeCode(raw);
+      try {
+        // Nothing is spent here; the spin itself happens on the machine.
+        const res = await fetch(`/api/token/check?code=${encodeURIComponent(code)}`, {
+          cache: "no-store",
+        });
+        const data = (await res.json()) as { ok: boolean; reason?: string };
+        if (!data.ok) {
+          setError(data.reason === "already-played" ? t.flow.tokenUsed : t.flow.tokenUnknown);
+          return;
+        }
+        setToken(code);
+        setStage("wheel");
+      } catch {
+        setError(t.phone.offline);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [t.flow.tokenUnknown, t.flow.tokenUsed, t.phone.offline]
+  );
+
+  const spin = useCallback(() => {
+    if (!token) throw new PlayFailed("unknown-token");
+    return play({ code: token, stage: "wheel" });
+  }, [token]);
+
+  const wheelFinished = useCallback((result: PlayResponse) => {
     setOutcome(result);
-    setStage("reveal");
+    setStage(result.secondChanceAvailable ? "secondChanceOffer" : "reveal");
   }, []);
+
+  const declineSecondChance = useCallback(async () => {
+    if (!token) return reset();
+    setStage("grading");
+    try {
+      setOutcome(await play({ code: token, stage: "decline" }));
+      setStage("reveal");
+    } catch {
+      setStage("trouble");
+    }
+  }, [token, reset]);
 
   const quizFinished = useCallback(
     (log: AnswerLog[]) => {
+      if (!token) return;
       const correct = log.filter((entry) => entry.correct).length;
       setQuizLog(log);
-      setScore(correct);
-      prefetchPrize("classroom", correct, {
-        kind: "classroom",
-        answers: log.map((e) => ({ id: e.question.id, picked: e.picked, correct: e.correct })),
+      const request = play({
+        code: token,
+        stage: "second-chance",
+        score: correct,
+        detail: {
+          kind: "classroom",
+          answers: log.map((entry) => ({
+            id: entry.question.id,
+            picked: entry.picked,
+            correct: entry.correct,
+          })),
+        },
       });
+      request.catch(() => {});
+      request.then(setOutcome, () => {});
+      pending.current = request;
       setStage("review");
     },
-    [prefetchPrize]
+    [token]
   );
 
-  const catchFinished = useCallback(
-    (result: CatchResult) => {
-      const caught = result.caught.length;
-      setCatchResult(result);
-      setScore(caught);
-      prefetchPrize("catch", caught, {
-        kind: "catch",
-        caught: result.caught.map((c) => c.merchant),
-        missed: result.missed.map((c) => c.merchant),
-        declined: result.declined.map((c) => c.merchant),
-        kept: result.kept.map((c) => c.merchant),
-      });
-      setStage("review");
-    },
-    [prefetchPrize]
-  );
-
-  /** Move from a skill game's results to the prize reveal. */
   const settlePrize = useCallback(() => {
-    setStage(outcome ? "reveal" : "grading");
+    setStage(outcome && !outcome.secondChanceAvailable ? "reveal" : "grading");
   }, [outcome]);
 
-  /** Re-issue a prize request that failed outright. */
-  const retryPrize = useCallback(() => {
-    prefetchPrize(mode, score ?? 0);
-    setStage("grading");
-  }, [prefetchPrize, mode, score]);
-
-  // Whatever put us in grading, the answer arrives here.
   useEffect(() => {
     if (stage !== "grading") return;
     let cancelled = false;
@@ -182,39 +207,7 @@ export default function Kiosk() {
     };
   }, [stage]);
 
-  const submitEmail = useCallback(
-    async (email: string, consent: boolean) => {
-      if (!outcome) return;
-      setBusy(true);
-      setError(null);
-      try {
-        setClaim(await requestClaim({ outcome, email, consent }));
-        setStage("code");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went sideways. Try again.");
-      } finally {
-        setBusy(false);
-      }
-    },
-    [outcome]
-  );
-
-  const skipEmail = useCallback(async () => {
-    if (!outcome) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setClaim(await requestClaim({ outcome, skipEmail: true }));
-      setStage("code");
-    } catch {
-      setError("No connection. Ask a Chargebacks911 rep for help.");
-    } finally {
-      setBusy(false);
-    }
-  }, [outcome]);
-
-  const scoreLine =
-    mode === "catch" && score !== null ? `Caught ${score} of ${CATCH_TOTAL}` : null;
+  const scoreLine = useMemo(() => null, []);
 
   /* -------------------------------------------------------------- render */
 
@@ -224,20 +217,37 @@ export default function Kiosk() {
 
       {stage === "attract" && <AttractScreen onStart={start} />}
 
-      {stage === "choose" && <ModeSelect onPick={pickMode} onQuit={reset} />}
-
-      {stage === "casino" && <SlotMachine onFinish={slotsFinished} onQuit={reset} />}
-
-      {stage === "classroom" && <Quiz onFinish={quizFinished} onQuit={reset} />}
-
-      {stage === "catch" && <CatchGame onFinish={catchFinished} onQuit={reset} />}
-
-      {stage === "review" && mode === "classroom" && (
-        <QuizResults log={quizLog} onContinue={settlePrize} onHome={reset} />
+      {stage === "capture" && (
+        <CaptureScreen
+          session={session}
+          busy={busy}
+          error={error}
+          onSubmit={submitEmail}
+          onIssuedElsewhere={() => setStage("token")}
+          onHome={reset}
+        />
       )}
 
-      {stage === "review" && mode === "catch" && catchResult && (
-        <CatchResults result={catchResult} onContinue={settlePrize} onHome={reset} />
+      {stage === "token" && (
+        <TokenScreen busy={busy} error={error} onSubmit={submitToken} onHome={reset} />
+      )}
+
+      {stage === "wheel" && (
+        <SlotMachine onSpin={spin} onFinish={wheelFinished} onQuit={reset} />
+      )}
+
+      {stage === "secondChanceOffer" && (
+        <SecondChance
+          onTake={() => setStage("quiz")}
+          onDecline={declineSecondChance}
+          onHome={reset}
+        />
+      )}
+
+      {stage === "quiz" && <Quiz onFinish={quizFinished} onQuit={declineSecondChance} />}
+
+      {stage === "review" && (
+        <QuizResults log={quizLog} onContinue={settlePrize} onHome={reset} />
       )}
 
       {stage === "grading" && (
@@ -253,32 +263,14 @@ export default function Kiosk() {
         <PrizeReveal
           outcome={outcome}
           scoreLine={scoreLine}
-          onContinue={() => setStage("email")}
+          onContinue={() => setStage("code")}
           onHome={reset}
         />
       )}
 
-      {stage === "email" && outcome && (
-        <ClaimScreen
-          outcome={outcome}
-          prizeLine={
-            outcome.result === "win"
-              ? fill(t.email.wonLine, { label: tierText(t, outcome.prize.id).label })
-              : t.email.loseLine
-          }
-          busy={busy}
-          error={error}
-          onSubmit={submitEmail}
-          onSkip={skipEmail}
-          onClaimed={(result) => {
-            setClaim(result);
-            setStage("code");
-          }}
-          onHome={reset}
-        />
+      {stage === "code" && outcome && token && (
+        <CodeCard code={token} outcome={outcome} onDone={reset} />
       )}
-
-      {stage === "code" && claim && <CodeCard claim={claim} onDone={reset} />}
 
       {stage === "trouble" && (
         <div className="relative flex h-full w-full flex-col items-center justify-center gap-[3vmin] overflow-hidden p-[5vmin] text-center">
@@ -294,22 +286,13 @@ export default function Kiosk() {
             <p className="max-w-[90vmin] text-[2.4vmin] font-medium text-white/60">
               {t.trouble.body}
             </p>
-            <div className="mt-[1vmin] flex gap-[2vmin]">
-              <button
-                type="button"
-                onClick={retryPrize}
-                className="rounded-2xl border-2 border-white/25 bg-gradient-to-b from-cb-red-hot via-cb-red to-cb-red-deep px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white transition active:scale-95"
-              >
-                {t.trouble.tryAgain}
-              </button>
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded-2xl border border-edge bg-panel px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white/60 transition active:scale-95"
-              >
-                {t.trouble.startOver}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-2xl border border-edge bg-panel px-[5vmin] py-[1.8vmin] font-[family-name:var(--font-display)] text-[3vmin] uppercase leading-none tracking-wide text-white/60 transition active:scale-95"
+            >
+              {t.trouble.startOver}
+            </button>
           </div>
         </div>
       )}

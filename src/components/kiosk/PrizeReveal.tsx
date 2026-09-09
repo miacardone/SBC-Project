@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { Backdrop, Confetti, CornerControls, Logo, PillButton } from "./Chrome";
 import { prizeName, tierText, useI18n } from "@/lib/i18n";
 import { ReelSymbol } from "@/components/Symbols";
-import type { OutcomeResponse } from "@/lib/client";
+import type { PlayResponse } from "@/lib/client";
 
 type Props = {
-  outcome: OutcomeResponse;
+  outcome: PlayResponse;
   /** e.g. "Caught 8 of 10" — omitted for the slots */
   scoreLine?: string | null;
   onContinue: () => void;
@@ -94,6 +94,10 @@ export function PrizeReveal({ outcome, scoreLine, onContinue, onHome }: Props) {
             ))}
           </div>
         </div>
+
+        <p className="text-[2.2vmin] font-semibold text-white/55">
+          {won ? t.flow.checkEmail : ""}
+        </p>
 
         <button
           type="button"

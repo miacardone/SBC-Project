@@ -117,6 +117,8 @@ const KEY_INDEX = "cb911:entries";
 const KEY_COUNT = (tierId: string) => `cb911:count:${tierId}`;
 /** A one-key answer for "did the phone finish yet", so the kiosk poll is 1 read. */
 const KEY_CLAIMED = (id: string) => `cb911:claimed:${id}`;
+/** phone-handoff session -> token, so the kiosk can poll one key */
+const KEY_SESSION = (session: string) => `cb911:session:${session}`;
 
 function parseEntry(raw: unknown): Entry | null {
   if (typeof raw !== "string") return null;
@@ -174,7 +176,7 @@ export async function saveEntry(entry: Entry): Promise<Entry> {
     ["SET", KEY_ENTRY(entry.code), JSON.stringify(entry)],
     ["SET", KEY_ID(entry.id), entry.code],
     ["LPUSH", KEY_INDEX, entry.code],
-    ["INCR", KEY_COUNT(entry.tierId)],
+    ...(entry.session ? [["SET", KEY_SESSION(entry.session), entry.code]] : []),
   ]);
   return entry;
 }
@@ -198,12 +200,38 @@ export async function updateEntry(
   return next;
 }
 
+/**
+ * Tokens are issued before anyone plays, so the prize counter can only move
+ * when a tier is actually awarded — not when the row is created.
+ */
+export async function incrementTier(tierId: string): Promise<void> {
+  if (backend === "file") return; // the file backend counts rows directly
+  try {
+    await redis(["INCR", KEY_COUNT(tierId)]);
+  } catch (err) {
+    console.error("[store] could not bump tier counter:", err);
+  }
+}
+
+/** Resolve the token a phone issued for this kiosk session. */
+export async function getEntryBySession(session: string): Promise<Entry | null> {
+  if (backend === "file") {
+    const db = await readFileDb();
+    return db.entries.find((e) => e.session === session) ?? null;
+  }
+  const code = await redis(["GET", KEY_SESSION(session)]);
+  if (typeof code !== "string") return null;
+  return parseEntry(await redis(["GET", KEY_ENTRY(code)]));
+}
+
 /** How many of each tier have gone out so far — drives the inventory caps. */
 export async function awardedCounts(): Promise<Record<string, number>> {
   if (backend === "file") {
     const entries = await listEntries();
     const counts: Record<string, number> = {};
-    for (const e of entries) counts[e.tierId] = (counts[e.tierId] ?? 0) + 1;
+    for (const e of entries) {
+      if (e.tierId) counts[e.tierId] = (counts[e.tierId] ?? 0) + 1;
+    }
     return counts;
   }
   const rows = (await redis(["MGET", ...ALL_TIER_IDS.map(KEY_COUNT)])) as unknown[];
@@ -264,6 +292,7 @@ export async function clearAll(): Promise<number> {
     ...entries.map((e) => KEY_ENTRY(e.code)),
     ...entries.map((e) => KEY_ID(e.id)),
     ...entries.map((e) => KEY_CLAIMED(e.id)),
+    ...entries.filter((e) => e.session).map((e) => KEY_SESSION(e.session as string)),
     ...ALL_TIER_IDS.map(KEY_COUNT),
     KEY_INDEX,
   ];

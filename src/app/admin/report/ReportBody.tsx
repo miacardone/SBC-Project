@@ -19,8 +19,10 @@ type TierStat = {
 
 type Stats = {
   backend: string;
+  tokens: number;
   plays: number;
   leads: number;
+  secondChances: number;
   consented: number;
   redeemed: number;
   casino: number;
@@ -232,10 +234,14 @@ export default function ReportBody() {
         {/* headline */}
         <Section title="Headline">
           <div className="grid grid-cols-3 gap-4">
-            <Figure label="Plays" value={stats.plays} />
-            <Figure label="Emails captured" value={stats.leads} />
+            <Figure label="Tokens issued" value={stats.tokens} />
+            <Figure label="Played" value={stats.plays} note="took their spin" />
             <Figure label="Marketing opt-ins" value={stats.consented} />
-            <Figure label="Capture rate" value={`${derived.captureRate.toFixed(0)}%`} note="of plays that left an email" />
+            <Figure
+              label="Play-through"
+              value={`${stats.tokens ? ((stats.plays / stats.tokens) * 100).toFixed(0) : 0}%`}
+              note="of tokens that got used"
+            />
             <Figure label="Opt-in rate" value={`${derived.optInRate.toFixed(0)}%`} note="of captured emails" />
             <Figure label="Prizes redeemed" value={stats.redeemed} note="collected at the booth" />
           </div>
@@ -252,16 +258,11 @@ export default function ReportBody() {
               </tr>
             </thead>
             <tbody>
-              <Row3 a="Casino (slots)" b={stats.casino} c="—" />
+              <Row3 a="Wheel spins" b={stats.casino} c="—" />
               <Row3
-                a="Classroom (quiz)"
-                b={stats.classroom}
+                a="Second chances taken"
+                b={stats.secondChances}
                 c={derived.quiz ? `${derived.quiz.average.toFixed(1)} / ${derived.quiz.outOf}` : "—"}
-              />
-              <Row3
-                a="Catch (fraud)"
-                b={stats.catch}
-                c={derived.catch ? `${derived.catch.average.toFixed(1)} / ${derived.catch.outOf}` : "—"}
               />
               <Row3 a="Winning plays" b={stats.wins} c="—" />
             </tbody>

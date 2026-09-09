@@ -73,7 +73,7 @@ export function PlayDetail({ entry, print = false }: { entry: Entry; print?: boo
 
 /** One-line header shared by the modal and the report. */
 export function playSummary(entry: Entry): string {
-  const parts: string[] = [entry.mode];
+  const parts: string[] = [entry.mode ?? "not played"];
   if (entry.score !== null && entry.scoreOutOf !== null) {
     parts.push(`${entry.score}/${entry.scoreOutOf}`);
   }

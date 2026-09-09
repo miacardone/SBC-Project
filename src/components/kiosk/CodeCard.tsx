@@ -3,16 +3,20 @@
 import { useEffect, useState } from "react";
 import { Backdrop, Bulbs, CornerControls, Logo, PillButton } from "./Chrome";
 import { fill, prizeName, useI18n } from "@/lib/i18n";
-import type { ClaimResponse } from "@/lib/client";
+import type { PlayResponse } from "@/lib/client";
 
 type Props = {
-  claim: ClaimResponse;
+  code: string;
+  outcome: PlayResponse;
   onDone: () => void;
   /** seconds before the kiosk resets itself for the next person */
   resetIn?: number;
 };
 
-export function CodeCard({ claim, onDone, resetIn = 30 }: Props) {
+/** Configured once at build time; the booth number changes per event. */
+const BOOTH = process.env.NEXT_PUBLIC_BOOTH ?? "Booth E321";
+
+export function CodeCard({ code, outcome, onDone, resetIn = 30 }: Props) {
   const { t } = useI18n();
   const [left, setLeft] = useState(resetIn);
 
@@ -46,7 +50,7 @@ export function CodeCard({ claim, onDone, resetIn = 30 }: Props) {
             {t.code.prizeCode}
           </div>
           <div className="mt-[1.2vmin] font-[family-name:var(--font-display)] text-[10vmin] leading-none tracking-[0.08em] text-white [text-shadow:0_0_5vmin_rgb(227_30_36_/_0.6)]">
-            {claim.code}
+            {code}
           </div>
         </div>
 
@@ -55,7 +59,7 @@ export function CodeCard({ claim, onDone, resetIn = 30 }: Props) {
             {t.code.eligible}
           </div>
           <div className="mt-[1.4vmin] flex flex-wrap items-center justify-center gap-[1.4vmin]">
-            {claim.options.map((option) => (
+            {outcome.prize.options.map((option) => (
               <span
                 key={option}
                 className="rounded-full border border-cb-red/50 bg-cb-red/10 px-[2.4vmin] py-[1vmin] font-[family-name:var(--font-display)] text-[2.6vmin] uppercase leading-none text-white"
@@ -66,13 +70,12 @@ export function CodeCard({ claim, onDone, resetIn = 30 }: Props) {
           </div>
         </div>
 
-        <p className="text-[2vmin] font-medium text-white/60">
-          {claim.skipped
-            ? t.code.skipped
-            : claim.emailSent
-              ? t.code.emailSent
-              : t.code.emailPending}
-        </p>
+        <div className="flex flex-col items-center gap-[1vmin]">
+          <p className="font-[family-name:var(--font-display)] text-[3.4vmin] uppercase leading-none text-cb-red">
+            {fill(t.flow.boothLine, { booth: BOOTH })}
+          </p>
+          <p className="text-[2vmin] font-medium text-white/55">{t.flow.checkEmail}</p>
+        </div>
 
         <button
           type="button"

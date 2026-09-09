@@ -1,16 +1,20 @@
 # cb911 Arcade
 
-Trade-show kiosk for Chargebacks911: three booth games, prize codes, and email
-capture. Next.js App Router, Tailwind v4, no other runtime dependencies — email
+Trade-show kiosk for Chargebacks911: email capture buys a token, the token
+buys a spin, and a losing spin buys a question. Next.js App Router, Tailwind v4, no other runtime dependencies — email
 and storage both talk to REST APIs with `fetch`.
 
 ## Shape
 
 - `src/app/page.tsx` — the whole kiosk as one client state machine
-  (`attract → choose → casino | classroom | catch → review → grading → reveal →
-  email → code`), plus the idle reset and the `trouble` fallback.
-- `src/app/claim/[id]/*` — the page the QR opens on the player's phone. Separate
-  from the kiosk: it scrolls, selects text, and uses a native keyboard.
+  (`attract → capture → token → wheel → secondChanceOffer → quiz → review →
+  grading → reveal → code`), plus the idle reset and the `trouble` fallback.
+- `src/app/join/[session]/*` — the page the QR opens on the player's phone,
+  where they hand over an email and the token appears. Separate from the kiosk:
+  it scrolls, selects text, and uses a native keyboard.
+- `ModeSelect`, `CatchGame` and `CatchResults` are no longer reachable — the
+  flow is linear now. They still compile and still have their translations, so
+  putting Catch back is a routing change, not a rebuild.
 - `src/components/kiosk/*` — one component per screen. `Chrome.tsx` holds the
   shared logo, marquee bulbs, backdrop and confetti.
 - `src/components/Symbols.tsx` — reel artwork as inline SVG. Gradients live in a
@@ -30,12 +34,18 @@ and storage both talk to REST APIs with `fetch`.
 
 ## Conventions
 
-- **Outcomes are decided server-side before any animation runs.** `/api/outcome`
+- **Outcomes are decided server-side before any animation runs.** `/api/play`
   picks the result and the prize tier, then builds the reel grid to match. Never
   let the client decide whether someone won.
-- **The code is withheld until the claim screen.** `/api/outcome` creates the
-  entry and returns only the tier; `/api/claim` attaches the email and releases
-  the code. That split is what separates "plays" from "leads" in the console.
+- **The email comes first and buys a token.** `/api/token` captures the address
+  and mints the code; `/api/play` spends it. One token per person, and it is the
+  same code they show at the booth — never mint a second one.
+- **A token is spent exactly once, and that is enforced on the server.** One
+  spin, at most one second chance. `/api/token/check` validates without
+  spending, so a mistyped code costs a retry and nothing else.
+- **A losing spin awards the consolation immediately.** Somebody who wanders off
+  mid-second-chance still holds a prize the booth can honour. The prize email
+  waits until the outcome is settled so nobody gets two.
 - **A player wins a tier, not an item.** They choose from `tier.options` at the
   booth and staff record it on the console. Anything that names a single prize
   up front is a bug.

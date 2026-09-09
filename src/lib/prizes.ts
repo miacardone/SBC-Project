@@ -52,8 +52,12 @@ export const CONSOLATION: PrizeTier = {
   isGrand: false,
 };
 
-/** Base odds that a slot pull is a winning pull. */
-export const SLOT_WIN_RATE = envNumber("SLOT_WIN_RATE", 0.35);
+/**
+ * Odds the wheel itself pays: 100 in 10,000. It is meant to lose — the second
+ * chance question is where most prizes are actually won, which is the point:
+ * it puts the chargeback content in front of everyone who wants merch.
+ */
+export const WHEEL_WIN_RATE = envNumber("WHEEL_WIN_RATE", 0.01);
 
 export function tierById(id: string): PrizeTier {
   if (id === CONSOLATION.id) return CONSOLATION;

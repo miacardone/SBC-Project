@@ -34,6 +34,15 @@ export function getDictionary(code: string | undefined): Dictionary {
   return isLocale(code ?? "") ? DICTIONARIES[code as LocaleCode] : DICTIONARIES[DEFAULT_LOCALE];
 }
 
+/** Resolve a requested language to one we actually ship, with its dictionary. */
+export function dictionaryFor(code: string | undefined): {
+  locale: LocaleCode;
+  dictionary: Dictionary;
+} {
+  const locale: LocaleCode = isLocale(code ?? "") ? (code as LocaleCode) : DEFAULT_LOCALE;
+  return { locale, dictionary: DICTIONARIES[locale] };
+}
+
 /** Substitutes {name} placeholders. */
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (whole, key: string) =>

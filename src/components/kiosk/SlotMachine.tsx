@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bulbs, Logo } from "./Chrome";
 import { useI18n } from "@/lib/i18n";
-import { requestOutcome } from "@/lib/client";
+
 import { ReelSymbol } from "@/components/Symbols";
 import { FILLER_SYMBOLS, BULLS_TO_WIN } from "@/lib/slots";
-import type { OutcomeResponse } from "@/lib/client";
+import type { PlayResponse } from "@/lib/client";
 
 const PAD = 18;
 const BASE_MS = 1500;
@@ -87,16 +87,18 @@ const IDLE_GRID: string[][] = Array.from({ length: 5 }, () => [
 ]);
 
 type Props = {
-  onFinish: (outcome: OutcomeResponse) => void;
+  /** the caller owns the request, so the machine never guesses the odds */
+  onSpin: () => Promise<PlayResponse>;
+  onFinish: (outcome: PlayResponse) => void;
   onQuit: () => void;
 };
 
-export function SlotMachine({ onFinish, onQuit }: Props) {
-  const { t, locale } = useI18n();
+export function SlotMachine({ onSpin, onFinish, onQuit }: Props) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState<"ready" | "arming" | "spinning" | "result">("ready");
   const [grid, setGrid] = useState<string[][]>(IDLE_GRID);
   const [nonce, setNonce] = useState(0);
-  const [outcome, setOutcome] = useState<OutcomeResponse | null>(null);
+  const [outcome, setOutcome] = useState<PlayResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [win, setWin] = useState(0);
 
@@ -109,7 +111,7 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
     setWin(0);
 
     try {
-      const data = await requestOutcome("casino", undefined, locale);
+      const data = await onSpin();
 
       setOutcome(data);
       setGrid(data.grid ?? IDLE_GRID);
@@ -125,7 +127,7 @@ export function SlotMachine({ onFinish, onQuit }: Props) {
       setError(t.slots.hiccup);
       setPhase("ready");
     }
-  }, [phase, t.slots.hiccup, locale]);
+  }, [phase, onSpin, t.slots.hiccup]);
 
   // Once the reels land, give people a beat to enjoy it, then move on.
   useEffect(() => {

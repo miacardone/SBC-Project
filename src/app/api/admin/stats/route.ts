@@ -50,13 +50,18 @@ export async function GET(request: Request) {
     backend,
     healthy,
     warning,
-    plays: entries.length,
+    // The funnel changed shape when email moved to the front: every row is a
+    // captured address, and the interesting number is how many of them went on
+    // to actually play.
+    tokens: entries.length,
+    plays: entries.filter((e) => e.playedAt).length,
     leads: entries.filter((e) => e.email).length,
+    secondChances: entries.filter((e) => e.usedSecondChance).length,
     consented: entries.filter((e) => e.consent).length,
     redeemed: entries.filter((e) => e.redeemedAt).length,
-    casino: entries.filter((e) => e.mode === "casino").length,
-    classroom: entries.filter((e) => e.mode === "classroom").length,
-    catch: entries.filter((e) => e.mode === "catch").length,
+    casino: entries.filter((e) => e.playedAt).length,
+    classroom: entries.filter((e) => e.usedSecondChance).length,
+    catch: 0,
     wins: entries.filter((e) => e.result === "win").length,
     tiers,
   });
