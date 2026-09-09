@@ -203,6 +203,11 @@ export const nl: Dictionary = {
     emailUndeliverable: "Dat adres kan geen mail ontvangen. Probeer een ander.",
     emailBlocked: "We hebben een adres nodig dat je echt gebruikt.",
     emailNotSent: "We konden niet naar dat adres sturen. Probeer een ander.",
+    continueWithGoogle: "Doorgaan met Google",
+    googleFastest: "Het snelst — niets te typen",
+    continueAs: "Doorgaan als {email}",
+    useAnotherEmail: "Ander e-mailadres gebruiken",
+    orDivider: "of",
     tokenOnPhone: "Je token staat op je telefoon",
   },
 

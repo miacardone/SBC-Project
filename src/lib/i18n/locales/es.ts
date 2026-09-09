@@ -408,6 +408,11 @@ export const es: Dictionary = {
     emailUndeliverable: "Esa dirección no puede recibir correo. Prueba con otra.",
     emailBlocked: "Necesitamos una dirección que uses de verdad.",
     emailNotSent: "No hemos podido enviar a esa dirección. Prueba con otra.",
+    continueWithGoogle: "Continuar con Google",
+    googleFastest: "Lo más rápido — sin escribir nada",
+    continueAs: "Continuar como {email}",
+    useAnotherEmail: "Usar otro correo",
+    orDivider: "o",
     tokenOnPhone: "Tu token está en tu móvil",
   },
 

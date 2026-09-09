@@ -90,7 +90,8 @@ export class TokenFailed extends Error {
 }
 
 export async function requestToken(body: {
-  email: string;
+  /** omitted when a Google session already proves the address */
+  email?: string;
   consent: boolean;
   locale: string;
   session?: string;

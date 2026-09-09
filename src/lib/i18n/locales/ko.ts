@@ -203,6 +203,11 @@ export const ko: Dictionary = {
     emailUndeliverable: "해당 주소로는 메일을 받을 수 없습니다. 다른 주소를 사용하세요.",
     emailBlocked: "실제로 사용하는 주소가 필요합니다.",
     emailNotSent: "해당 주소로 보내지 못했습니다. 다른 주소를 사용하세요.",
+    continueWithGoogle: "Google로 계속하기",
+    googleFastest: "가장 빠름 — 입력 불필요",
+    continueAs: "{email} 으로 계속",
+    useAnotherEmail: "다른 이메일 사용",
+    orDivider: "또는",
     tokenOnPhone: "토큰이 휴대폰에 있습니다",
   },
 

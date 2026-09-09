@@ -203,6 +203,11 @@ export const ar: Dictionary = {
     emailUndeliverable: "هذا العنوان لا يستقبل البريد. جرّب عنوانًا آخر.",
     emailBlocked: "نحتاج إلى عنوان تستخدمه فعلًا.",
     emailNotSent: "تعذّر الإرسال إلى هذا العنوان. جرّب عنوانًا آخر.",
+    continueWithGoogle: "المتابعة باستخدام Google",
+    googleFastest: "الأسرع — بلا كتابة",
+    continueAs: "المتابعة باسم {email}",
+    useAnotherEmail: "استخدام بريد آخر",
+    orDivider: "أو",
     tokenOnPhone: "رمزك على هاتفك",
   },
 

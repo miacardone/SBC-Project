@@ -203,6 +203,11 @@ export const ja: Dictionary = {
     emailUndeliverable: "そのアドレスはメールを受信できません。別のものをお試しください。",
     emailBlocked: "実際にお使いのアドレスが必要です。",
     emailNotSent: "そのアドレスに送信できませんでした。別のものをお試しください。",
+    continueWithGoogle: "Google で続行",
+    googleFastest: "最速 — 入力不要",
+    continueAs: "{email} で続行",
+    useAnotherEmail: "別のメールを使う",
+    orDivider: "または",
     tokenOnPhone: "トークンはスマホにあります",
   },
 

@@ -203,6 +203,11 @@ export const da: Dictionary = {
     emailUndeliverable: "Den adresse kan ikke modtage mail. Prøv en anden.",
     emailBlocked: "Vi skal bruge en adresse, du faktisk bruger.",
     emailNotSent: "Vi kunne ikke sende til den adresse. Prøv en anden.",
+    continueWithGoogle: "Fortsæt med Google",
+    googleFastest: "Hurtigst — intet at skrive",
+    continueAs: "Fortsæt som {email}",
+    useAnotherEmail: "Brug en anden e-mail",
+    orDivider: "eller",
     tokenOnPhone: "Din token er på din telefon",
   },
 

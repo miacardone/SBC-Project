@@ -203,6 +203,11 @@ export const ru: Dictionary = {
     emailUndeliverable: "Этот адрес не может принимать почту. Попробуйте другой.",
     emailBlocked: "Нам нужен адрес, которым вы действительно пользуетесь.",
     emailNotSent: "Не удалось отправить на этот адрес. Попробуйте другой.",
+    continueWithGoogle: "Продолжить с Google",
+    googleFastest: "Быстрее всего — ничего не вводить",
+    continueAs: "Продолжить как {email}",
+    useAnotherEmail: "Использовать другую почту",
+    orDivider: "или",
     tokenOnPhone: "Ваш токен на телефоне",
   },
 

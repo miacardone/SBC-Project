@@ -202,6 +202,11 @@ export const fr: Dictionary = {
     emailUndeliverable: "Cette adresse ne peut pas recevoir d'e-mails. Essayez-en une autre.",
     emailBlocked: "Il nous faut une adresse que vous utilisez vraiment.",
     emailNotSent: "Nous n'avons pas pu envoyer à cette adresse. Essayez-en une autre.",
+    continueWithGoogle: "Continuer avec Google",
+    googleFastest: "Le plus rapide — rien à saisir",
+    continueAs: "Continuer en tant que {email}",
+    useAnotherEmail: "Utiliser une autre adresse",
+    orDivider: "ou",
     tokenOnPhone: "Votre jeton est sur votre téléphone",
   },
 

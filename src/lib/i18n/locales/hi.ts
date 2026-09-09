@@ -203,6 +203,11 @@ export const hi: Dictionary = {
     emailUndeliverable: "यह पता मेल नहीं ले सकता। कोई दूसरा आज़माएँ।",
     emailBlocked: "हमें ऐसा पता चाहिए जो आप सच में इस्तेमाल करते हों।",
     emailNotSent: "हम उस पते पर नहीं भेज सके। कोई दूसरा आज़माएँ।",
+    continueWithGoogle: "Google से जारी रखें",
+    googleFastest: "सबसे तेज़ — कुछ टाइप नहीं करना",
+    continueAs: "{email} के रूप में जारी रखें",
+    useAnotherEmail: "दूसरा ईमेल इस्तेमाल करें",
+    orDivider: "या",
     tokenOnPhone: "आपका टोकन आपके फ़ोन पर है",
   },
 

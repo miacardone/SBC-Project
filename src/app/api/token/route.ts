@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { makeId, makeToken } from "@/lib/code";
 import { checkEmail, maskEmail } from "@/lib/email-check";
 import { emailConfigured, sendTokenEmail } from "@/lib/email";
@@ -34,7 +35,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "syntax" }, { status: 400 });
   }
 
-  const verdict = await checkEmail(body.email ?? "");
+  // A Google session is proof in itself, and the address comes from Clerk —
+  // never from the request body, which a phone could say anything in.
+  let googleEmail: string | null = null;
+  try {
+    const user = await currentUser();
+    const primary = user?.primaryEmailAddress;
+    if (primary?.emailAddress && primary.verification?.status === "verified") {
+      googleEmail = primary.emailAddress.trim().toLowerCase();
+    }
+  } catch (err) {
+    console.error("[token] could not read the sign-in session:", err);
+  }
+
+  const verdict = await checkEmail(googleEmail ?? body.email ?? "");
   if (!verdict.ok) {
     return NextResponse.json({ error: verdict.reason }, { status: 400 });
   }
@@ -78,6 +92,23 @@ export async function POST(request: Request) {
     emailSent: false,
     redeemedAt: null,
   };
+
+  // Signed in with Google: hand the token straight over. Making somebody who
+  // just proved their identity go and read an inbox as well would be friction
+  // for nothing.
+  if (googleEmail) {
+    entry.verifiedBy = "google";
+    try {
+      await saveEntry(entry);
+    } catch (err) {
+      console.error("[token] FAILED TO PERSIST — check storage:", err);
+      return NextResponse.json({ error: "storage" }, { status: 503 });
+    }
+    sendTokenEmail(entry)
+      .then((sent) => (sent ? undefined : console.warn("[token] copy email failed")))
+      .catch((err: unknown) => console.error("[token] copy email failed:", err));
+    return NextResponse.json({ code: entry.code, verified: true });
+  }
 
   // No sender configured: hand the token over and mark the row unverified
   // rather than stranding the queue.

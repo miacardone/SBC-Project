@@ -203,6 +203,11 @@ export const tr: Dictionary = {
     emailUndeliverable: "Bu adres posta alamıyor. Başka bir tane deneyin.",
     emailBlocked: "Gerçekten kullandığınız bir adres gerekiyor.",
     emailNotSent: "Bu adrese gönderemedik. Başka bir tane deneyin.",
+    continueWithGoogle: "Google ile devam et",
+    googleFastest: "En hızlısı — yazmaya gerek yok",
+    continueAs: "{email} olarak devam et",
+    useAnotherEmail: "Başka bir e-posta kullan",
+    orDivider: "veya",
     tokenOnPhone: "Jetonunuz telefonunuzda",
   },
 

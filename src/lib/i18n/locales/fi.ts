@@ -203,6 +203,11 @@ export const fi: Dictionary = {
     emailUndeliverable: "Tuo osoite ei voi vastaanottaa postia. Kokeile toista.",
     emailBlocked: "Tarvitsemme osoitteen, jota oikeasti käytät.",
     emailNotSent: "Emme saaneet lähetettyä tuohon osoitteeseen. Kokeile toista.",
+    continueWithGoogle: "Jatka Googlella",
+    googleFastest: "Nopeinta — ei tarvitse kirjoittaa",
+    continueAs: "Jatka tunnuksella {email}",
+    useAnotherEmail: "Käytä toista sähköpostia",
+    orDivider: "tai",
     tokenOnPhone: "Tunnuksesi on puhelimessasi",
   },
 

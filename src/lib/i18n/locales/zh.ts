@@ -203,6 +203,11 @@ export const zh: Dictionary = {
     emailUndeliverable: "该地址无法接收邮件。请换一个。",
     emailBlocked: "我们需要一个你真正在用的地址。",
     emailNotSent: "无法发送到该地址。请换一个。",
+    continueWithGoogle: "使用 Google 继续",
+    googleFastest: "最快——无需输入",
+    continueAs: "以 {email} 继续",
+    useAnotherEmail: "使用其他邮箱",
+    orDivider: "或",
     tokenOnPhone: "你的代币在手机上",
   },
 

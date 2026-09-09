@@ -37,6 +37,14 @@ and storage both talk to REST APIs with `fetch`.
 - **Outcomes are decided server-side before any animation runs.** `/api/play`
   picks the result and the prize tier, then builds the reel grid to match. Never
   let the client decide whether someone won.
+- **An address is only real if something proved it.** Google sign-in via Clerk
+  proves it outright; a typed address is proved by delivering the token to it
+  and nothing else. `src/lib/email-check.ts` is a filter in front of both, not
+  evidence — fake.com publishes MX records. Every row records `verifiedBy`.
+- **Clerk is scoped to `/join/**` and `/api/token` and must stay that way.** The
+  kiosk bundle ships no Clerk JS and the console has nothing to do with it.
+- **The token email is the only thing a typed address gets.** Never return the
+  code in the response for a typed request — that hands it to whoever asked.
 - **The email comes first and buys a token.** `/api/token` captures the address
   and mints the code; `/api/play` spends it. One token per person, and it is the
   same code they show at the booth — never mint a second one.

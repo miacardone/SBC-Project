@@ -412,6 +412,11 @@ export const en = {
     emailUndeliverable: "That address can't receive mail. Try another one.",
     emailBlocked: "We need an address you actually use.",
     emailNotSent: "We couldn't send to that address. Try another one.",
+    continueWithGoogle: "Continue with Google",
+    googleFastest: "Fastest — nothing to type",
+    continueAs: "Continue as {email}",
+    useAnotherEmail: "Use a different email",
+    orDivider: "or",
     tokenOnPhone: "Your token is on your phone",
   },
 
